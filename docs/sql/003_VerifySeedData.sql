@@ -1,7 +1,7 @@
 -- ============================================================================
 -- SAS — Support Audit System
 -- Verification queries for the seeded configuration data.
--- Run against the SasSupportAudit database (or whatever you named it) after
+-- Run against the Rittal_Support database (or whatever you named it) after
 -- applying 001_InitialCreate.sql and 002_SeedInitialData.sql (or the combined
 -- 000_FullDeploy_IdempotentFromScratch.sql).
 -- ============================================================================

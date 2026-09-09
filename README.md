@@ -52,7 +52,7 @@ value. Options, in order of preference:
 1. **User secrets** (recommended for local dev):
    ```
    cd src/SAS.Web
-   dotnet user-secrets set "ConnectionStrings:Default" "Server=YOUR_SERVER;Database=SasSupportAudit;User Id=...;Password=...;TrustServerCertificate=True"
+   dotnet user-secrets set "ConnectionStrings:Default" "Server=YOUR_SERVER;Database=Rittal_Support;User Id=...;Password=...;TrustServerCertificate=True"
    ```
 2. **Environment variable**: `ConnectionStrings__Default`
 3. **`appsettings.Development.json`** (gitignored — safe to edit locally, never committed)
@@ -91,7 +91,7 @@ already does, you don't need to run a deploy script at all.
 | `docs/sql/002_SeedInitialData.sql` | Seed data only — **not idempotent**, plain `INSERT`. | Same caveat as 001: reference only, never run on a database that already has the seed rows. |
 
 To create the database from nothing in SSMS: open a query window connected to
-your target server, `CREATE DATABASE SasSupportAudit;`, switch to it, then run
+your target server, `CREATE DATABASE Rittal_Support;`, switch to it, then run
 `000_FullDeploy_IdempotentFromScratch.sql`. Then run `003_VerifySeedData.sql`
 to confirm the seed looks right.
 
