@@ -1,0 +1,83 @@
+@page
+@model SAS.Web.Pages.Admin.TaskListsModel
+@{
+    ViewData["Title"] = "Admin — Task lists";
+    ViewData["AdminActive"] = "TaskLists";
+}
+
+<div class="page">
+    <div class="card"><h1 style="font-size:20px">Task lists</h1></div>
+    @await Html.PartialAsync("_AdminNav")
+
+    @if (Model.Message is not null) { <div class="ok-msg">@Model.Message</div> }
+    @if (Model.Error is not null) { <div class="err-msg">@Model.Error</div> }
+
+    <div class="card">
+        <div class="section-title">Create task list for an area + shift</div>
+        <form method="post" asp-page-handler="Create" class="field-row" style="align-items:end;flex-wrap:wrap">
+            <div class="field">
+                <label>Area</label>
+                <select name="areaId" required>
+                    @foreach (var a in Model.Areas)
+                    {
+                        <option value="@a.Id">@a.Department!.Name — @a.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label>Shift</label>
+                <select name="shiftId" required>
+                    @foreach (var s in Model.Shifts)
+                    {
+                        <option value="@s.Id">@s.Department!.Name — @s.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field"><label>Health reps reminder</label><input type="text" name="healthRepsReminder" /></div>
+            <div class="field" style="min-width:0"><button class="btn primary" type="submit">Create</button></div>
+        </form>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px">Area and shift must belong to the same department.</p>
+    </div>
+
+    <div class="card" style="padding:0">
+        <table class="data">
+            <thead><tr><th>Department</th><th>Area</th><th>Shift</th><th>Version</th><th>Current</th><th>Items</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var l in Model.Lists)
+                {
+                    <tr>
+                        <td>@l.Area!.Department!.Name</td>
+                        <td>@l.Area!.Name</td>
+                        <td>@l.Shift!.Name</td>
+                        <td>v@l.Version</td>
+                        <td>@(l.IsCurrent ? "Yes" : "—")</td>
+                        <td>@l.TaskItems.Count</td>
+                        <td style="white-space:nowrap">
+                            <a class="btn small" href="/Admin/TaskListItems?id=@l.Id">Edit tasks</a>
+                            @if (l.IsCurrent)
+                            {
+                                <button form="v@l.Id" class="btn small" type="submit">New version</button>
+                            }
+                            else
+                            {
+                                <button form="c@l.Id" class="btn small" type="submit">Make current</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@foreach (var l in Model.Lists)
+{
+    <form id="v@l.Id" method="post" asp-page-handler="NewVersion">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="sourceId" value="@l.Id" />
+    </form>
+    <form id="c@l.Id" method="post" asp-page-handler="SetCurrent">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@l.Id" />
+    </form>
+}

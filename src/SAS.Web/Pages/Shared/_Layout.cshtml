@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewData["Title"] is not null ? ViewData["Title"] + " — Support Audit System" : "Support Audit System")</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="stripes"><span class="st st1"></span><span class="st st2"></span><span class="st st3"></span></div>
+        <div>
+            <div class="brand">RITTAL</div>
+            <div class="subbrand">Support Audit System</div>
+        </div>
+        <nav class="topbar-right">
+            <a class="tbtn" href="/">Home</a>
+            <a class="tbtn" href="/Completed">Completed</a>
+            <a class="tbtn" href="/Admin">Admin</a>
+        </nav>
+    </header>
+
+    <main class="app-main">
+        @RenderBody()
+    </main>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

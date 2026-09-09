@@ -1,0 +1,16 @@
+## .NET
+bin/
+obj/
+*.user
+
+## IDE
+.vs/
+.vscode/
+
+## Local secrets / environment overrides — never commit connection strings
+**/appsettings.Development.json
+**/appsettings.Local.json
+.env
+
+## OS
+.DS_Store

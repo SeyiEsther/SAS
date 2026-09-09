@@ -1,0 +1,204 @@
+@page
+@model SAS.Web.Pages.ChecklistModel
+@{
+    ViewData["Title"] = Model.Area is not null ? $"{Model.Area.Name} — {Model.Shift?.Name}" : "Checklist";
+}
+
+@if (Model.NotConfigured)
+{
+    <div class="page">
+        <div class="card empty-state">
+            No current task list is set up for this area and shift yet. Ask an admin to create one in
+            <a href="/Admin">Admin</a>.
+        </div>
+    </div>
+    return;
+}
+
+@{
+    var submission = Model.Submission!;
+    var items = Model.Items;
+}
+
+<div class="page" data-checklist-root
+     data-submission-id="@submission.Id"
+     data-total="@Model.TotalCount"
+     data-answered="@Model.AnsweredCount"
+     data-readonly="@(Model.IsReadOnly ? "1" : "0")"
+     data-save-task-url="?handler=SaveTask"
+     data-save-checkpoint-url="?handler=SaveCheckpoint"
+     data-save-notes-url="?handler=SaveNotes"
+     data-save-meta-url="?handler=SaveMeta"
+     data-complete-url="?handler=Complete"
+     data-home-url="/">
+
+    @Html.AntiForgeryToken()
+
+    <div class="card checklist-head">
+        <h1>@Model.Area!.Name — @Model.Shift!.Name</h1>
+        <div class="meta">@Model.Department!.Name &middot; @Model.ChecklistDate.ToString("ddd dd MMM yyyy")</div>
+        @if (Model.IsReadOnly)
+        {
+            <div class="ok-msg" style="margin-top:10px">Completed by @submission.CompletedBy on @submission.CompletedAt!.Value.ToLocalTime().ToString("g"). This checklist is read-only.</div>
+        }
+    </div>
+
+    <div class="card">
+        <div class="progress-label">
+            <span>Progress</span>
+            <span class="count" id="progress-text">@Model.AnsweredCount of @Model.TotalCount</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:@(Model.TotalCount == 0 ? 0 : Model.AnsweredCount * 100 / Model.TotalCount)%"></div></div>
+    </div>
+
+    <div class="card">
+        <div class="section-title">Checklist details</div>
+        <div class="field-row">
+            <div class="field">
+                <label for="auditorNames">Auditor name(s)</label>
+                <input type="text" id="auditorNames" value="@submission.AuditorNames" placeholder="Names of everyone on this checklist" @(Model.IsReadOnly ? "disabled" : "") />
+            </div>
+            <div class="field">
+                <label for="location">Location</label>
+                <input type="text" id="location" value="@submission.Location" @(Model.IsReadOnly ? "disabled" : "") />
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-title">HOD sign-off</div>
+        <div class="field" style="margin-bottom:0">
+            <label for="completedBy">HOD who reviewed and signed off this checklist</label>
+            <input type="text" id="completedBy" value="@submission.CompletedBy" placeholder="Not yet signed off" @(Model.IsReadOnly ? "disabled" : "") />
+        </div>
+    </div>
+
+    @if (Model.IsGridMode)
+    {
+        @foreach (var cat in Model.GridCategories)
+        {
+            var slug = SAS.Web.Pages.ChecklistModel.CategorySlug(cat.Category);
+            <div class="grid-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="qcol">@cat.Category</th>
+                            @foreach (var cp in cat.Checkpoints)
+                            {
+                                <th class="hcol">
+                                    @if (cp.Label.StartsWith("Hr "))
+                                    {
+                                        <span class="hr-badge">@cp.Label.Substring(3)</span>
+                                    }
+                                    else
+                                    {
+                                        @cp.Label
+                                    }
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="sec-row cat-@slug"><td colspan="@(cat.Checkpoints.Count + 1)">@cat.Category</td></tr>
+                        @foreach (var item in cat.Items)
+                        {
+                            var resp = submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == item.Id);
+                            var answered = SAS.Web.Services.ChecklistService.IsItemAnswered(item, submission);
+                            <tr class="item-row" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
+                                <td class="qcell">
+                                    <div class="item-text">@item.Text</div>
+                                    <div class="item-sub">Checked by @item.ResponsibleRole@(item.EscalateToRole is not null ? $" — escalate to {item.EscalateToRole}" : "")@(item.EscalationWindow is not null ? $" ({item.EscalationWindow})" : "")</div>
+                                </td>
+                                @if (item.IsTimeBoxed)
+                                {
+                                    foreach (var cp in cat.Checkpoints)
+                                    {
+                                        var cr = resp?.CheckpointResponses.FirstOrDefault(c => c.TaskCheckpointId == cp.Id);
+                                        <td data-checkpoint-id="@cp.Id">
+                                            <div class="yn-group">
+                                                <button type="button" class="y @(cr?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Y</button>
+                                                <button type="button" class="n @(cr?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>N</button>
+                                            </div>
+                                        </td>
+                                    }
+                                }
+                                else
+                                {
+                                    <td class="wide-cell" colspan="@Math.Max(cat.Checkpoints.Count, 1)">
+                                        <div class="wide-toggle">
+                                            <button type="button" class="done @(resp?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Done</button>
+                                            <button type="button" class="issue @(resp?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>Issue</button>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                            <tr class="grid-note-row" data-note-row style="display:@((resp?.Notes is { Length: > 0 }) || (item.IsTimeBoxed && resp?.CheckpointResponses.Any(c => c.Status == "Issue") == true) ? "table-row" : "none")">
+                                <td colspan="@(cat.Checkpoints.Count + 1)">
+                                    <textarea placeholder="Notes (required when any answer is N)" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+    else
+    {
+        @foreach (var item in items)
+        {
+            var resp = submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == item.Id);
+            var statusClass = resp?.Status == "Done" ? "status-done" : resp?.Status == "Issue" ? "status-issue" : "";
+            var answered = SAS.Web.Services.ChecklistService.IsItemAnswered(item, submission);
+            <div class="task-card @statusClass" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
+                <div class="task-text">@item.Text</div>
+
+                @if (item.IsTimeBoxed)
+                {
+                    foreach (var cp in item.Checkpoints.OrderBy(c => c.SortOrder))
+                    {
+                        var cr = resp?.CheckpointResponses.FirstOrDefault(c => c.TaskCheckpointId == cp.Id);
+                        <div class="checkpoint-row" data-checkpoint-id="@cp.Id">
+                            <div class="cp-label">@cp.Label</div>
+                            <div class="cp-btns">
+                                <button type="button" class="cp-btn @(cr?.Status == "Done" ? "active-done" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Done</button>
+                                <button type="button" class="cp-btn @(cr?.Status == "Issue" ? "active-issue" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>Issue</button>
+                            </div>
+                        </div>
+                    }
+                    <div class="task-notes" data-note-block style="display:@((resp?.CheckpointResponses.Any(c => c.Status == "Issue") == true) ? "block" : "none")">
+                        <textarea placeholder="Describe the issue (required)" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
+                        <div class="hint">Notes are required while any checkpoint above is marked Issue.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="task-actions">
+                        <button type="button" class="btn-done @(resp?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Done</button>
+                        <button type="button" class="btn-issue @(resp?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>Issue</button>
+                    </div>
+                    <div class="task-notes" data-note-block style="display:@(resp?.Status == "Issue" ? "block" : "none")">
+                        <textarea placeholder="Describe the issue (required)" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
+                        <div class="hint">Notes are required when Issue is selected.</div>
+                    </div>
+                }
+                <div class="save-state" data-save-state></div>
+            </div>
+        }
+    }
+
+    <div style="height:20px"></div>
+</div>
+
+<div class="action-bar">
+    <a class="btn ghost" href="/">Leave &amp; come back later</a>
+    <a class="btn ghost" href="/Checklist?handler=Pdf&areaId=@Model.Area!.Id&shiftId=@Model.Shift!.Id&date=@Model.ChecklistDate.ToString("yyyy-MM-dd")">Download PDF</a>
+    @if (!Model.IsReadOnly)
+    {
+        <button class="btn primary" id="complete-btn" type="button">Complete checklist</button>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/checklist.js" asp-append-version="true"></script>
+}

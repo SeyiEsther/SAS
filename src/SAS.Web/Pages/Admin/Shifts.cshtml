@@ -1,0 +1,72 @@
+@page
+@model SAS.Web.Pages.Admin.ShiftsModel
+@{
+    ViewData["Title"] = "Admin — Shifts";
+    ViewData["AdminActive"] = "Shifts";
+}
+
+<div class="page">
+    <div class="card"><h1 style="font-size:20px">Shifts</h1></div>
+    @await Html.PartialAsync("_AdminNav")
+
+    @if (Model.Message is not null) { <div class="ok-msg">@Model.Message</div> }
+    @if (Model.Error is not null) { <div class="err-msg">@Model.Error</div> }
+
+    <div class="card">
+        <div class="section-title">Add shift</div>
+        <form method="post" asp-page-handler="Create" class="field-row" style="align-items:end;flex-wrap:wrap">
+            <div class="field">
+                <label>Department</label>
+                <select name="departmentId" required>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field"><label>Name</label><input type="text" name="name" required /></div>
+            <div class="field"><label>Sort order</label><input type="number" name="sortOrder" value="0" /></div>
+            <div class="field" style="min-width:0"><button class="btn primary" type="submit">Add</button></div>
+        </form>
+    </div>
+
+    <div class="card" style="padding:0">
+        <table class="data">
+            <thead><tr><th>Department</th><th>Name</th><th>Sort</th><th>Active</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var s in Model.Shifts)
+                {
+                    <tr>
+                        <td>
+                            <select form="f@s.Id" name="departmentId" style="border:1px solid var(--border);border-radius:6px;padding:6px">
+                                @foreach (var d in Model.Departments)
+                                {
+                                    <option value="@d.Id" selected="@(d.Id == s.DepartmentId)">@d.Name</option>
+                                }
+                            </select>
+                        </td>
+                        <td><input form="f@s.Id" type="text" name="name" value="@s.Name" style="border:1px solid var(--border);border-radius:6px;padding:6px;width:100%" /></td>
+                        <td><input form="f@s.Id" type="number" name="sortOrder" value="@s.SortOrder" style="width:60px;border:1px solid var(--border);border-radius:6px;padding:6px" /></td>
+                        <td><input form="f@s.Id" type="checkbox" name="isActive" value="true" checked="@s.IsActive" /></td>
+                        <td style="white-space:nowrap">
+                            <button form="f@s.Id" class="btn small" type="submit">Save</button>
+                            <button form="fd@s.Id" class="btn small" type="submit" style="color:var(--red-text)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@foreach (var s in Model.Shifts)
+{
+    <form id="f@s.Id" method="post" asp-page-handler="Update">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@s.Id" />
+    </form>
+    <form id="fd@s.Id" method="post" asp-page-handler="Delete" onsubmit="return confirm('Delete this shift? Its task lists must be removed first.');">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@s.Id" />
+    </form>
+}

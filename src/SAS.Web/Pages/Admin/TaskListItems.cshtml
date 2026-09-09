@@ -1,0 +1,95 @@
+@page
+@model SAS.Web.Pages.Admin.TaskListItemsModel
+@{
+    ViewData["Title"] = "Admin — Task list items";
+    ViewData["AdminActive"] = "TaskLists";
+}
+
+<div class="page">
+    <div class="card">
+        <h1 style="font-size:20px">@Model.List!.Area!.Department!.Name — @Model.List.Area!.Name — @Model.List.Shift!.Name</h1>
+        <p class="checklist-head meta">Version @Model.List.Version @(Model.List.IsCurrent ? "(current)" : "")</p>
+        <a class="btn small" href="/Admin/TaskLists" style="margin-top:10px;display:inline-block">&larr; Back to task lists</a>
+    </div>
+
+    @if (Model.Message is not null) { <div class="ok-msg">@Model.Message</div> }
+    @if (Model.Error is not null) { <div class="err-msg">@Model.Error</div> }
+
+    <div class="card">
+        <div class="section-title">Add task</div>
+        <form method="post" asp-page-handler="CreateItem">
+            <input type="hidden" name="taskListId" value="@Model.List.Id" />
+            <div class="field"><label>Task text</label><textarea name="text" required></textarea></div>
+            <div class="field-row">
+                <div class="field"><label>Sort order</label><input type="number" name="sortOrder" value="@((Model.Items.Count + 1) * 10)" /></div>
+                <div class="field"><label><input type="checkbox" name="isTimeBoxed" value="true" /> Time-boxed (repeats at checkpoints)</label></div>
+            </div>
+            <div class="field-row">
+                <div class="field"><label>Category</label><input type="text" name="category" placeholder="e.g. H&amp;S — leave blank if none" /></div>
+                <div class="field"><label>Cadence</label><input type="text" name="cadence" placeholder="e.g. Hourly, Per Shift, Daily" /></div>
+            </div>
+            <div class="field-row">
+                <div class="field"><label>Responsible role</label><input type="text" name="responsibleRole" /></div>
+                <div class="field"><label>Escalate to role</label><input type="text" name="escalateToRole" /></div>
+            </div>
+            <div class="field"><label>Escalation window</label><input type="text" name="escalationWindow" placeholder="e.g. Immediate, Same shift" /></div>
+            <button class="btn primary" type="submit">Add task</button>
+        </form>
+    </div>
+
+    @foreach (var item in Model.Items)
+    {
+        <div class="card">
+            <form method="post" asp-page-handler="UpdateItem">
+                <input type="hidden" name="id" value="@item.Id" />
+                <input type="hidden" name="taskListId" value="@Model.List.Id" />
+                <div class="field"><label>Task text</label><textarea name="text">@item.Text</textarea></div>
+                <div class="field-row">
+                    <div class="field"><label>Sort order</label><input type="number" name="sortOrder" value="@item.SortOrder" /></div>
+                    <div class="field"><label><input type="checkbox" name="isTimeBoxed" value="true" checked="@item.IsTimeBoxed" /> Time-boxed (repeats at checkpoints)</label></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label>Category</label><input type="text" name="category" value="@item.Category" /></div>
+                    <div class="field"><label>Cadence</label><input type="text" name="cadence" value="@item.Cadence" /></div>
+                </div>
+                <div class="field-row">
+                    <div class="field"><label>Responsible role</label><input type="text" name="responsibleRole" value="@item.ResponsibleRole" /></div>
+                    <div class="field"><label>Escalate to role</label><input type="text" name="escalateToRole" value="@item.EscalateToRole" /></div>
+                </div>
+                <div class="field"><label>Escalation window</label><input type="text" name="escalationWindow" value="@item.EscalationWindow" /></div>
+                <button class="btn small" type="submit">Save</button>
+            </form>
+            <form method="post" asp-page-handler="DeleteItem" onsubmit="return confirm('Delete this task and all its responses?');" style="margin-top:8px">
+                <input type="hidden" name="id" value="@item.Id" />
+                <input type="hidden" name="taskListId" value="@Model.List.Id" />
+                <button class="btn small" type="submit" style="color:var(--red-text)">Delete task</button>
+            </form>
+
+            @if (item.IsTimeBoxed)
+            {
+                <details style="margin-top:14px">
+                    <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Checkpoints (@item.Checkpoints.Count)</summary>
+                    <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+                        @foreach (var cp in item.Checkpoints)
+                        {
+                            <form method="post" asp-page-handler="DeleteCheckpoint" style="display:flex;gap:8px;align-items:center" onsubmit="return confirm('Delete this checkpoint?');">
+                                <span class="chip" style="min-width:80px">@cp.Label</span>
+                                <span style="font-size:11px;color:var(--muted)">sort @cp.SortOrder</span>
+                                <input type="hidden" name="id" value="@cp.Id" />
+                                <input type="hidden" name="taskListId" value="@Model.List.Id" />
+                                <button class="btn small" type="submit" style="color:var(--red-text)">Remove</button>
+                            </form>
+                        }
+                    </div>
+                    <form method="post" asp-page-handler="CreateCheckpoint" class="field-row" style="align-items:end;margin-top:10px">
+                        <input type="hidden" name="taskItemId" value="@item.Id" />
+                        <input type="hidden" name="taskListId" value="@Model.List.Id" />
+                        <div class="field"><label>Label</label><input type="text" name="label" placeholder="e.g. Hr 1, 9am" required /></div>
+                        <div class="field"><label>Sort order</label><input type="number" name="sortOrder" value="@((item.Checkpoints.Count + 1) * 10)" /></div>
+                        <div class="field" style="min-width:0"><button class="btn small primary" type="submit">Add checkpoint</button></div>
+                    </form>
+                </details>
+            }
+        </div>
+    }
+</div>

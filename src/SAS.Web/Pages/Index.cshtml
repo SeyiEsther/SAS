@@ -1,0 +1,46 @@
+@page
+@model SAS.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="page">
+    <div class="card">
+        <h1 style="font-size:20px;margin-bottom:4px">Safe Start Checklists</h1>
+        <p class="checklist-head meta">Pick a department, area and shift to start or resume today's checklist.</p>
+    </div>
+
+    @if (!Model.Departments.Any())
+    {
+        <div class="card empty-state">No departments configured yet. Set them up in <a href="/Admin">Admin</a>.</div>
+    }
+
+    @foreach (var dept in Model.Departments)
+    {
+        <div class="card">
+            <div class="section-title">@dept.Name</div>
+
+            @if (!dept.Areas.Any() || !dept.Shifts.Any())
+            {
+                <p style="color:var(--muted);font-size:13px">No areas or shifts configured for this department yet.</p>
+            }
+            else
+            {
+                <div class="picker-grid">
+                    @foreach (var area in dept.Areas)
+                    {
+                        <div class="picker-card">
+                            <h3>@area.Name</h3>
+                            <div class="picker-chip-row">
+                                @foreach (var shift in dept.Shifts)
+                                {
+                                    <a class="chip" href="/Checklist?areaId=@area.Id&shiftId=@shift.Id&date=@Model.Today.ToString("yyyy-MM-dd")">@shift.Name</a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

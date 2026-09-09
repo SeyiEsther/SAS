@@ -1,0 +1,15 @@
+@page
+@{
+    ViewData["Title"] = "Admin";
+}
+
+<div class="page">
+    <div class="card">
+        <h1 style="font-size:20px;margin-bottom:4px">Admin</h1>
+        <p class="checklist-head meta">Every department, area, shift, category and task lives here — nothing is hardcoded in the app.</p>
+    </div>
+    @await Html.PartialAsync("_AdminNav")
+    <div class="card">
+        <p style="font-size:13px;color:var(--muted)">Pick a section above to manage its records. Task lists let you edit the tasks, categories and hourly checkpoints for a specific area + shift.</p>
+    </div>
+</div>

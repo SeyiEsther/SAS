@@ -1,0 +1,74 @@
+@page
+@model SAS.Web.Pages.Admin.AreasModel
+@{
+    ViewData["Title"] = "Admin — Areas";
+    ViewData["AdminActive"] = "Areas";
+}
+
+<div class="page">
+    <div class="card"><h1 style="font-size:20px">Areas</h1></div>
+    @await Html.PartialAsync("_AdminNav")
+
+    @if (Model.Message is not null) { <div class="ok-msg">@Model.Message</div> }
+    @if (Model.Error is not null) { <div class="err-msg">@Model.Error</div> }
+
+    <div class="card">
+        <div class="section-title">Add area</div>
+        <form method="post" asp-page-handler="Create" class="field-row" style="align-items:end;flex-wrap:wrap">
+            <div class="field">
+                <label>Department</label>
+                <select name="departmentId" required>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field"><label>Name</label><input type="text" name="name" required /></div>
+            <div class="field"><label>Default location</label><input type="text" name="defaultLocation" /></div>
+            <div class="field"><label>Sort order</label><input type="number" name="sortOrder" value="0" /></div>
+            <div class="field" style="min-width:0"><button class="btn primary" type="submit">Add</button></div>
+        </form>
+    </div>
+
+    <div class="card" style="padding:0">
+        <table class="data">
+            <thead><tr><th>Department</th><th>Name</th><th>Default location</th><th>Sort</th><th>Active</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.Areas)
+                {
+                    <tr>
+                        <td>
+                            <select form="f@a.Id" name="departmentId" style="border:1px solid var(--border);border-radius:6px;padding:6px">
+                                @foreach (var d in Model.Departments)
+                                {
+                                    <option value="@d.Id" selected="@(d.Id == a.DepartmentId)">@d.Name</option>
+                                }
+                            </select>
+                        </td>
+                        <td><input form="f@a.Id" type="text" name="name" value="@a.Name" style="border:1px solid var(--border);border-radius:6px;padding:6px;width:100%" /></td>
+                        <td><input form="f@a.Id" type="text" name="defaultLocation" value="@a.DefaultLocation" style="border:1px solid var(--border);border-radius:6px;padding:6px;width:100%" /></td>
+                        <td><input form="f@a.Id" type="number" name="sortOrder" value="@a.SortOrder" style="width:60px;border:1px solid var(--border);border-radius:6px;padding:6px" /></td>
+                        <td><input form="f@a.Id" type="checkbox" name="isActive" value="true" checked="@a.IsActive" /></td>
+                        <td style="white-space:nowrap">
+                            <button form="f@a.Id" class="btn small" type="submit">Save</button>
+                            <button form="fd@a.Id" class="btn small" type="submit" style="color:var(--red-text)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@foreach (var a in Model.Areas)
+{
+    <form id="f@a.Id" method="post" asp-page-handler="Update">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@a.Id" />
+    </form>
+    <form id="fd@a.Id" method="post" asp-page-handler="Delete" onsubmit="return confirm('Delete this area? Its task lists must be removed first.');">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@a.Id" />
+    </form>
+}

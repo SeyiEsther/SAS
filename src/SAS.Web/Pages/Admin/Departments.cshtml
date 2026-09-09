@@ -1,0 +1,55 @@
+@page
+@model SAS.Web.Pages.Admin.DepartmentsModel
+@{
+    ViewData["Title"] = "Admin — Departments";
+    ViewData["AdminActive"] = "Departments";
+}
+
+<div class="page">
+    <div class="card"><h1 style="font-size:20px">Departments</h1></div>
+    @await Html.PartialAsync("_AdminNav")
+
+    @if (Model.Message is not null) { <div class="ok-msg">@Model.Message</div> }
+    @if (Model.Error is not null) { <div class="err-msg">@Model.Error</div> }
+
+    <div class="card">
+        <div class="section-title">Add department</div>
+        <form method="post" asp-page-handler="Create" class="field-row" style="align-items:end">
+            <div class="field"><label>Name</label><input type="text" name="name" required /></div>
+            <div class="field"><label>Sort order</label><input type="number" name="sortOrder" value="0" /></div>
+            <div class="field" style="min-width:0"><button class="btn primary" type="submit">Add</button></div>
+        </form>
+    </div>
+
+    <div class="card" style="padding:0">
+        <table class="data">
+            <thead><tr><th>Name</th><th>Sort order</th><th>Active</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var d in Model.Departments)
+                {
+                    <tr>
+                        <td><input form="f@d.Id" type="text" name="name" value="@d.Name" style="border:1px solid var(--border);border-radius:6px;padding:6px;width:100%" /></td>
+                        <td><input form="f@d.Id" type="number" name="sortOrder" value="@d.SortOrder" style="width:70px;border:1px solid var(--border);border-radius:6px;padding:6px" /></td>
+                        <td><input form="f@d.Id" type="checkbox" name="isActive" value="true" checked="@d.IsActive" /></td>
+                        <td style="white-space:nowrap">
+                            <button form="f@d.Id" class="btn small" type="submit">Save</button>
+                            <button form="fd@d.Id" class="btn small" type="submit" style="color:var(--red-text)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@foreach (var d in Model.Departments)
+{
+    <form id="f@d.Id" method="post" asp-page-handler="Update">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@d.Id" />
+    </form>
+    <form id="fd@d.Id" method="post" asp-page-handler="Delete" onsubmit="return confirm('Delete this department? Its areas and shifts must be removed first.');">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@d.Id" />
+    </form>
+}
