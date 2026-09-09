@@ -84,16 +84,26 @@ already does, you don't need to run a deploy script at all.
 
 | File | What it does | When to run it |
 |---|---|---|
-| `docs/sql/999_DiagnoseCurrentState.sql` | Read-only: shows `__EFMigrationsHistory`, table row counts, and current Departments. | **Run this first, always.** |
-| `docs/sql/000_FullDeploy_IdempotentFromScratch.sql` | Schema + seed, idempotent. | The only script you need for a normal deploy or re-deploy. |
+| `docs/sql/000a_CreateDatabaseAndGrantAccess.sql` | Creates the database if missing, and maps the app's SQL login into it with `db_owner`. Needs **sysadmin/dbcreator** rights — a DBA task, not something the app's own login (`db_Public_User`) can do for itself. | **Run this first, on a brand-new server/database, or if you hit SQL error 4060 ("Cannot open database ... login failed").** |
+| `docs/sql/999_DiagnoseCurrentState.sql` | Read-only: shows `__EFMigrationsHistory`, table row counts, and current Departments. | Run this before `000` to check whether the schema's already deployed. |
+| `docs/sql/000_FullDeploy_IdempotentFromScratch.sql` | Schema + seed, idempotent. | The script that actually deploys the app's schema and data — needs the login to already have access (i.e. `000a` already run). |
 | `docs/sql/003_VerifySeedData.sql` | Verification queries, including the one confirming every Dispatch task item has `Category` populated. | After 000, to confirm the seed looks right. |
 | `docs/sql/001_InitialCreate.sql` | Schema only — **not idempotent**, plain `CREATE TABLE`. | Reference only / advanced use (e.g. scripting just this one migration for a change-review tool). **Never run this against a database that might already have the schema** — it will fail with "already exists" on every table, exactly like the error from Sept 9: that happened because 001 was run again on top of a database 000 had already deployed successfully. |
 | `docs/sql/002_SeedInitialData.sql` | Seed data only — **not idempotent**, plain `INSERT`. | Same caveat as 001: reference only, never run on a database that already has the seed rows. |
 
-To create the database from nothing in SSMS: open a query window connected to
-your target server, `CREATE DATABASE Rittal_Support;`, switch to it, then run
-`000_FullDeploy_IdempotentFromScratch.sql`. Then run `003_VerifySeedData.sql`
-to confirm the seed looks right.
+**Full sequence for a brand-new deployment**, in order:
+1. `000a_CreateDatabaseAndGrantAccess.sql` — DBA/sysadmin rights, connected to `master`.
+2. `000_FullDeploy_IdempotentFromScratch.sql` — connected to the new database, using the app's normal login.
+3. `003_VerifySeedData.sql` — to confirm the seed looks right.
+
+**If you're getting "Cannot open database 'Rittal_Support' requested by the
+login. Login failed for user 'db_Public_User'"** (SQL error 4060): that's not
+an app bug. It means either the database doesn't exist on that server yet, or
+it exists but `db_Public_User` — a server-level login — has never been
+granted a mapped user inside this specific database (access is per-database,
+not automatic just because the login works elsewhere, e.g. on TL's
+`RittalTLSW`). Get someone with sysadmin rights on that SQL Server to run
+`000a_CreateDatabaseAndGrantAccess.sql`, then retry.
 
 Every future migration in this project will ship the same way: an EF
 migration plus its plain-SQL equivalent in `docs/sql/`, generated with:
