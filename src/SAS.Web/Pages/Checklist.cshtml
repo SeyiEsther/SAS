@@ -20,7 +20,7 @@
     var items = Model.Items;
 }
 
-<div class="page" data-checklist-root
+<div class="page @(Model.IsGridMode ? "wide" : "")" data-checklist-root
      data-submission-id="@submission.Id"
      data-total="@Model.TotalCount"
      data-answered="@Model.AnsweredCount"
@@ -34,14 +34,21 @@
 
     @Html.AntiForgeryToken()
 
-    <div class="card checklist-head">
-        <h1>@Model.Area!.Name — @Model.Shift!.Name</h1>
-        <div class="meta">@Model.Department!.Name &middot; @Model.ChecklistDate.ToString("ddd dd MMM yyyy")</div>
+    <div class="session-bar">
+        <div class="sf"><label>Date</label><input type="text" value="@Model.ChecklistDate.ToString("ddd dd MMM yyyy")" readonly></div>
+        <div class="sf"><label>Department</label><input type="text" value="@Model.Department!.Name" readonly></div>
+        <div class="sf"><label>Area</label><input type="text" value="@Model.Area!.Name" readonly style="font-weight:700;color:var(--red)"></div>
+        <div class="sf"><label>Shift</label><input type="text" value="@Model.Shift!.Name" readonly></div>
         @if (Model.IsReadOnly)
         {
-            <div class="ok-msg" style="margin-top:10px">Completed by @submission.CompletedBy on @submission.CompletedAt!.Value.ToLocalTime().ToString("g"). This checklist is read-only.</div>
+            <div class="sf" style="margin-left:auto"><label>Status</label><input type="text" value="Completed by @submission.CompletedBy" readonly style="color:var(--green);font-weight:700"></div>
         }
     </div>
+
+    @if (Model.IsReadOnly)
+    {
+        <div class="ok-msg">Completed by @submission.CompletedBy on @submission.CompletedAt!.Value.ToLocalTime().ToString("g"). This checklist is read-only.</div>
+    }
 
     <div class="card">
         <div class="progress-label">
