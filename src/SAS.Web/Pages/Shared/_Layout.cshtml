@@ -1,3 +1,7 @@
+@{
+    var pg = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    var isAdminArea = pg == "/Admin" || pg.StartsWith("/Admin");
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,24 +11,30 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header class="topbar">
-        <div class="stripes"><span class="st st1"></span><span class="st st2"></span><span class="st st3"></span></div>
-        <div>
-            <div class="brand">RITTAL</div>
-            <div class="subbrand">Support Audit System</div>
-        </div>
-        <nav class="topbar-right">
-            <a class="tbtn" href="/">Home</a>
-            <a class="tbtn" href="/Completed">Completed</a>
-            <a class="tbtn" href="/Admin">Admin</a>
-        </nav>
-    </header>
 
-    <main class="app-main">
-        @RenderBody()
-    </main>
+<div class="topbar">
+    <div class="stripes">
+        <div class="st" style="background:#CC1F2C;width:22px"></div>
+        <div class="st" style="background:#9B1E8E;width:17px"></div>
+        <div class="st" style="background:#0066B2;width:12px"></div>
+        <div class="st" style="background:#00A651;width:9px"></div>
+    </div>
+    <div>
+        <div class="brand">RITTAL</div>
+        <div class="subbrand">Support Audit System</div>
+    </div>
+    <div class="topbar-right">
+        <a class="tbtn @(pg == "/Index" ? "active" : "")" href="/">Home</a>
+        <a class="tbtn @(pg == "/Completed" ? "active" : "")" href="/Completed">Completed</a>
+        <a class="tbtn @(isAdminArea ? "active" : "")" href="/Admin">Admin</a>
+    </div>
+</div>
 
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+<main class="app-main">
+@RenderBody()
+</main>
+
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
