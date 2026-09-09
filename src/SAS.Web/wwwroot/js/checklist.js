@@ -44,6 +44,14 @@
         });
     }
 
+    function markAnswered(itemEl, isAnswered) {
+        answered[itemEl.dataset.itemId] = isAnswered;
+        itemEl.classList.toggle('is-answered', isAnswered);
+        var tick = itemEl.querySelector('[data-task-tick]');
+        if (tick) tick.textContent = isAnswered ? '\u2713' : '';
+        updateProgress();
+    }
+
     function updateProgress() {
         var count = 0;
         for (var k in answered) { if (answered[k]) count++; }
@@ -100,8 +108,7 @@
 
                 if (isIssue && !notes) {
                     setSaveState(itemEl, 'pending', 'Add notes to save this Issue.');
-                    answered[itemId] = false;
-                    updateProgress();
+                    markAnswered(itemEl, false);
                     if (textarea) textarea.focus();
                     return;
                 }
@@ -110,8 +117,7 @@
                 post(urls.task, { submissionId: submissionId, itemId: itemId, status: status, notes: notes || null, actor: actorName() })
                     .then(function () {
                         setSaveState(itemEl, 'saved', 'Saved');
-                        answered[itemId] = true;
-                        updateProgress();
+                        markAnswered(itemEl, true);
                     })
                     .catch(function (err) { setSaveState(itemEl, 'pending', err.message); });
             });
@@ -128,16 +134,14 @@
                     var status = activeBtn ? activeBtn.dataset.action : 'Issue';
                     if (status === 'Issue' && !notes) {
                         setSaveState(itemEl, 'pending', 'Notes are required for an Issue.');
-                        answered[itemId] = false;
-                        updateProgress();
+                        markAnswered(itemEl, false);
                         return;
                     }
                     setSaveState(itemEl, 'pending', 'Saving…');
                     post(urls.task, { submissionId: submissionId, itemId: itemId, status: status, notes: notes, actor: actorName() })
                         .then(function () {
                             setSaveState(itemEl, 'saved', 'Saved');
-                            answered[itemId] = true;
-                            updateProgress();
+                            markAnswered(itemEl, true);
                         })
                         .catch(function (err) { setSaveState(itemEl, 'pending', err.message); });
                 }, 500);
@@ -189,8 +193,7 @@
                     post(urls.checkpoint, { submissionId: submissionId, itemId: itemId, checkpointId: checkpointId, status: status, actor: actorName() })
                         .then(function () {
                             setSaveState(itemEl, 'saved', 'Saved');
-                            answered[itemId] = allAnswered();
-                            updateProgress();
+                            markAnswered(itemEl, allAnswered());
                         })
                         .catch(function (err) { setSaveState(itemEl, 'pending', err.message); });
                 });

@@ -1,6 +1,12 @@
+@inject SAS.Web.Services.AccessService Access
 @{
     var pg = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
     var isAdminArea = pg == "/Admin" || pg.StartsWith("/Admin");
+    var currentUser = Access.CurrentUser;
+    // The role lookup hits the database. If that's unreachable the header must
+    // still render — otherwise even the error page fails to load.
+    var isHod = false;
+    try { isHod = await Access.IsHodAsync(); } catch { }
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -24,6 +30,12 @@
         <div class="subbrand">Support Audit System</div>
     </div>
     <div class="topbar-right">
+        @if (!string.IsNullOrWhiteSpace(currentUser.Label) && currentUser.Label != "unknown")
+        {
+            <span class="user-chip" title="@(isHod ? "Signed in as an HOD — you can sign checklists off" : "Signed in")">
+                @currentUser.Label@(isHod ? " · HOD" : "")
+            </span>
+        }
         <a class="tbtn @(pg == "/Index" ? "active" : "")" href="/">Home</a>
         <a class="tbtn @(pg == "/Completed" ? "active" : "")" href="/Completed">Completed</a>
         <a class="tbtn @(isAdminArea ? "active" : "")" href="/Admin">Admin</a>

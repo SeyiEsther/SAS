@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
@@ -49,6 +50,18 @@ if (keyDir is not null)
         .PersistKeysToFileSystem(new DirectoryInfo(keyDir));
 }
 
+// Windows authentication, as TL does it: under IIS the identity arrives from
+// IIS itself; Negotiate covers Kestrel/HTTP.sys. Nothing is *required* to be
+// authenticated — an unauthenticated request falls back to the process user so
+// local development works off-domain (see UserService).
+builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
+builder.Services.AddAuthorization();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
+
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<AccessService>();
 builder.Services.AddScoped<ChecklistLoadService>();
 builder.Services.AddScoped<ChecklistSaveService>();
 builder.Services.AddScoped<ChecklistCompletionService>();
@@ -87,6 +100,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

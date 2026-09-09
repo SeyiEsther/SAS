@@ -293,6 +293,49 @@ public class AdminService
         return AdminResult.Ok("Checkpoint deleted.");
     }
 
+    // ---------------- People (HODs / Senior Operators) ----------------
+
+    public async Task<List<Person>> GetAllPeopleAsync() =>
+        await _db.People.Include(p => p.Department)
+            .OrderBy(p => p.Role).ThenBy(p => p.SortOrder).ThenBy(p => p.DisplayName)
+            .ToListAsync();
+
+    public async Task<AdminResult> CreatePersonAsync(string displayName, string? username, string role, int? departmentId, int sortOrder)
+    {
+        if (string.IsNullOrWhiteSpace(displayName)) return AdminResult.Fail("Name is required.");
+        _db.People.Add(new Person
+        {
+            DisplayName = displayName.Trim(),
+            Username = string.IsNullOrWhiteSpace(username) ? null : username.Trim(),
+            Role = role,
+            DepartmentId = departmentId,
+            SortOrder = sortOrder,
+            IsActive = true
+        });
+        return await TrySaveAsync($"\"{displayName}\" added.", "Someone with that name already holds that role.");
+    }
+
+    public async Task<AdminResult> UpdatePersonAsync(int id, string displayName, string? username, string role, int? departmentId, int sortOrder, bool isActive)
+    {
+        var person = await _db.People.FindAsync(id);
+        if (person is null) return AdminResult.Fail("Person not found.");
+        person.DisplayName = displayName.Trim();
+        person.Username = string.IsNullOrWhiteSpace(username) ? null : username.Trim();
+        person.Role = role;
+        person.DepartmentId = departmentId;
+        person.SortOrder = sortOrder;
+        person.IsActive = isActive;
+        return await TrySaveAsync("Updated.", "Someone with that name already holds that role.");
+    }
+
+    public async Task<AdminResult> DeletePersonAsync(int id)
+    {
+        var person = await _db.People.FindAsync(id);
+        if (person is null) return AdminResult.Fail("Person not found.");
+        _db.People.Remove(person);
+        return await TrySaveAsync("Removed.", "Could not remove this person.");
+    }
+
     // ---------------- helpers ----------------
 
     private async Task<AdminResult> TrySaveAsync(string successMessage, string conflictError)

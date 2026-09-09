@@ -1,0 +1,104 @@
+@page
+@model SAS.Web.Pages.Admin.PeopleModel
+@{
+    ViewData["Title"] = "Admin — People";
+    ViewData["AdminActive"] = "People";
+}
+
+<div class="page">
+    <div class="card">
+        <h1 style="font-size:20px">People &amp; roles</h1>
+        <p class="checklist-head meta">
+            HODs can sign checklists off and answer the checks the Dispatch audit assigns to the HOD.
+            Names are matched to the signed-in Windows user by display name (or account name), so they
+            must match Active Directory.
+        </p>
+        <p class="q-hint" style="margin-top:8px">
+            You are signed in as <strong>@Model.CurrentUserLabel</strong> —
+            @(Model.CurrentUserIsHod ? "recognised as an HOD." : "not currently recognised as an HOD.")
+        </p>
+    </div>
+    @await Html.PartialAsync("_AdminNav")
+
+    @if (Model.Message is not null) { <div class="ok-msg">@Model.Message</div> }
+    @if (Model.Error is not null) { <div class="err-msg">@Model.Error</div> }
+
+    <div class="card">
+        <div class="section-title">Add person</div>
+        <form method="post" asp-page-handler="Create" class="field-row" style="align-items:end;flex-wrap:wrap">
+            <div class="field"><label>Display name (as in AD)</label><input type="text" name="displayName" required /></div>
+            <div class="field"><label>Account name (optional)</label><input type="text" name="username" placeholder="e.g. jsmith" /></div>
+            <div class="field">
+                <label>Role</label>
+                <select name="role">
+                    @foreach (var r in SAS.Web.Pages.Admin.PeopleModel.Roles)
+                    {
+                        <option value="@r">@r</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label>Department (optional)</label>
+                <select name="departmentId">
+                    <option value="">All departments</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field"><label>Sort</label><input type="number" name="sortOrder" value="0" /></div>
+            <div class="field" style="min-width:0"><button class="btn primary" type="submit">Add</button></div>
+        </form>
+    </div>
+
+    <div class="card" style="padding:0">
+        <table class="data">
+            <thead><tr><th>Name</th><th>Account</th><th>Role</th><th>Department</th><th>Sort</th><th>Active</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.People)
+                {
+                    <tr>
+                        <td><input form="pf@p.Id" type="text" name="displayName" value="@p.DisplayName" style="border:1px solid var(--border);border-radius:6px;padding:6px;width:100%" /></td>
+                        <td><input form="pf@p.Id" type="text" name="username" value="@p.Username" style="border:1px solid var(--border);border-radius:6px;padding:6px;width:100%" /></td>
+                        <td>
+                            <select form="pf@p.Id" name="role" style="border:1px solid var(--border);border-radius:6px;padding:6px">
+                                @foreach (var r in SAS.Web.Pages.Admin.PeopleModel.Roles)
+                                {
+                                    <option value="@r" selected="@(p.Role == r)">@r</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <select form="pf@p.Id" name="departmentId" style="border:1px solid var(--border);border-radius:6px;padding:6px">
+                                <option value="">All</option>
+                                @foreach (var d in Model.Departments)
+                                {
+                                    <option value="@d.Id" selected="@(p.DepartmentId == d.Id)">@d.Name</option>
+                                }
+                            </select>
+                        </td>
+                        <td><input form="pf@p.Id" type="number" name="sortOrder" value="@p.SortOrder" style="width:60px;border:1px solid var(--border);border-radius:6px;padding:6px" /></td>
+                        <td><input form="pf@p.Id" type="checkbox" name="isActive" value="true" checked="@p.IsActive" /></td>
+                        <td style="white-space:nowrap">
+                            <button form="pf@p.Id" class="btn small" type="submit">Save</button>
+                            <button form="pd@p.Id" class="btn small" type="submit" style="color:var(--red-text)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@foreach (var p in Model.People)
+{
+    <form id="pf@p.Id" method="post" asp-page-handler="Update">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@p.Id" />
+    </form>
+    <form id="pd@p.Id" method="post" asp-page-handler="Delete" onsubmit="return confirm('Remove this person?');">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@p.Id" />
+    </form>
+}

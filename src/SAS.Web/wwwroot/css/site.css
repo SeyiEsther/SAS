@@ -48,6 +48,11 @@ a { color: inherit; text-decoration: none; }
 .brand { font-size: 17px; font-weight: 700; letter-spacing: .1em; color: #fff; }
 .subbrand { font-size: 11px; color: #9ca3af; letter-spacing: .04em; }
 .topbar-right { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.user-chip {
+    font-size: 12px; color: #d1d5db; padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,.12); border-radius: 99px;
+    background: rgba(255,255,255,.06); white-space: nowrap;
+}
 .tbtn {
     padding: 6px 14px; border: 1px solid rgba(255,255,255,.15); border-radius: 8px;
     background: none; color: #fff; font-size: 12px; cursor: pointer; font-family: inherit;
@@ -166,13 +171,16 @@ a { color: inherit; text-decoration: none; }
 }
 .task-card.status-done { border-left: 4px solid var(--green); }
 .task-card.status-issue { border-left: 4px solid var(--red); }
-.task-card .task-text { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 12px; }
+.task-card .task-text { font-size: 15px; font-weight: 600; line-height: 1.4; flex: 1; }
+.task-card .task-actions { margin-top: 12px; }
+.task-card.is-answered { background: #fcfdfc; }
 .task-actions { display: flex; gap: 10px; }
 .task-actions .btn-done, .task-actions .btn-issue {
-    flex: 1; padding: 14px 0; border-radius: 10px; border: 2px solid var(--border);
-    font-size: 14px; font-weight: 700; background: var(--white); color: var(--muted);
-    cursor: pointer; text-align: center;
+    flex: 1; padding: 16px 0; border-radius: 10px; border: 2px solid var(--border);
+    font-size: 15px; font-weight: 700; background: var(--white); color: var(--muted);
+    cursor: pointer; text-align: center; font-family: inherit; touch-action: manipulation;
 }
+.task-actions button:disabled { opacity: .55; cursor: not-allowed; }
 .task-actions .btn-done.active { background: var(--green-bg); border-color: var(--green); color: #166534; }
 .task-actions .btn-issue.active { background: var(--red-bg); border-color: var(--red); color: var(--red-text); }
 .task-notes { margin-top: 12px; }
@@ -182,13 +190,43 @@ a { color: inherit; text-decoration: none; }
 .save-state.saved { color: var(--green); }
 .save-state.pending { color: #b45309; }
 
-/* Timeboxed checkpoints within a Stores card */
-.checkpoint-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #f1f2f4; }
-.checkpoint-row .cp-label { width: 70px; font-size: 12px; font-weight: 700; color: var(--muted); }
-.checkpoint-row .cp-btns { display: flex; gap: 6px; flex: 1; }
-.cp-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 2px solid var(--border); background: var(--white); font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer; text-align: center; }
+/* Time-boxed checks inside a card: one small block per checkpoint, laid out
+   in a grid so 9am/11am/1pm/3pm read as four equal slots on any width. */
+.cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.cp-cell { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: var(--surface); }
+.cp-cell .cp-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; text-align: center; }
+.cp-cell .cp-btns { display: flex; gap: 6px; }
+.cp-btn { flex: 1; padding: 9px 0; border-radius: 8px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer; text-align: center; font-family: inherit; }
 .cp-btn.active-done { background: var(--green-bg); border-color: var(--green); color: #166534; }
 .cp-btn.active-issue { background: var(--red-bg); border-color: var(--red); color: var(--red-text); }
+.cp-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Card header: number, question, and a tick once the card is fully answered */
+.task-head { display: flex; align-items: flex-start; gap: 10px; }
+.task-no {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.task-card.is-answered .task-no { background: var(--green-bg); border-color: var(--green); color: #166534; }
+.task-tick { margin-left: auto; color: var(--green); font-weight: 700; font-size: 16px; line-height: 24px; }
+
+.hod-badge {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 99px;
+    background: #ede9fe; color: #5b21b6; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em; vertical-align: middle;
+}
+
+/* Issues the audit says must be escalated */
+.escalation-card {
+    background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid var(--orange);
+    border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
+}
+.escalation-head { font-size: 12px; font-weight: 700; color: #9a3412; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.escalation-row { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; padding: 4px 0; border-top: 1px solid #fed7aa; }
+.escalation-row:first-of-type { border-top: none; }
+.escalation-text { font-size: 13px; color: var(--ink); }
+.escalation-meta { font-size: 11px; font-weight: 700; color: #9a3412; white-space: nowrap; }
 
 /* Hourly grid — markup and styling copied from TL's Form.cshtml / site.css */
 .grid-wrap {

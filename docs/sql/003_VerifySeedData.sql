@@ -125,3 +125,45 @@ JOIN Areas a ON a.Id = tl.AreaId
 JOIN Shifts sh ON sh.Id = tl.ShiftId
 WHERE a.DepartmentId <> sh.DepartmentId;
 -- Expected result: 0 rows.
+
+-- ============================================================================
+-- Added by 004_AddPeopleAndSplitStoresAreas
+-- ============================================================================
+
+-- 9) Stores now has DP1 and DP3 as separate areas (plus Consumables), and the
+--    old combined "DP1 & DP3" area no longer exists.
+SELECT a.Name AS Area, a.DefaultLocation, a.SortOrder, a.IsActive
+FROM Areas a JOIN Departments d ON d.Id = a.DepartmentId
+WHERE d.Name = N'Stores'
+ORDER BY a.SortOrder;
+-- Expected: DP1, DP3, Consumables. No row named 'DP1 & DP3'.
+
+-- 10) DP3 got its own copy of every DP1 task list, with the same item counts
+--     (15 / 15 / 12 / 10) and the same checkpoints.
+SELECT a.Name AS Area, sh.Name AS Shift, COUNT(ti.Id) AS ItemCount
+FROM TaskLists tl
+JOIN Areas a ON a.Id = tl.AreaId
+JOIN Departments d ON d.Id = a.DepartmentId
+JOIN Shifts sh ON sh.Id = tl.ShiftId
+LEFT JOIN TaskItems ti ON ti.TaskListId = tl.Id
+WHERE d.Name = N'Stores' AND a.Name IN (N'DP1', N'DP3')
+GROUP BY a.Name, sh.Name, sh.SortOrder
+ORDER BY a.Name, sh.SortOrder;
+-- Expected: identical counts for DP1 and DP3 on each shift.
+
+-- 11) The HOD list that drives sign-off and HOD-only checks.
+SELECT Id, DisplayName, Username, Role, DepartmentId, SortOrder, IsActive
+FROM People
+ORDER BY Role, SortOrder;
+
+-- 12) Which Dispatch checks are HOD-only (ResponsibleRole = 'HOD') and which
+--     escalate to an HOD — these are what the app now enforces.
+SELECT DISTINCT ti.Category, ti.Cadence, ti.Text, ti.ResponsibleRole, ti.EscalateToRole, ti.EscalationWindow
+FROM TaskItems ti
+JOIN TaskLists tl ON tl.Id = ti.TaskListId
+JOIN Areas a ON a.Id = tl.AreaId
+JOIN Departments d ON d.Id = a.DepartmentId
+WHERE d.Name = N'Dispatch'
+  AND (ti.ResponsibleRole = N'HOD' OR ti.EscalateToRole = N'HOD')
+ORDER BY ti.ResponsibleRole DESC, ti.Category;
+-- Expected: 4 HOD-owned checks, 9 that escalate to an HOD.

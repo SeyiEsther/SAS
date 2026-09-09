@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<ChecklistSubmission> ChecklistSubmissions => Set<ChecklistSubmission>();
     public DbSet<TaskResponse> TaskResponses => Set<TaskResponse>();
     public DbSet<CheckpointResponse> CheckpointResponses => Set<CheckpointResponse>();
+    public DbSet<Person> People => Set<Person>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -124,6 +125,18 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.TaskItemId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.ChecklistSubmissionId, x.TaskItemId }).IsUnique();
+        });
+
+        modelBuilder.Entity<Person>(e =>
+        {
+            e.Property(x => x.DisplayName).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Username).HasMaxLength(200);
+            e.Property(x => x.Role).IsRequired().HasMaxLength(50);
+            e.HasOne(x => x.Department)
+                .WithMany()
+                .HasForeignKey(x => x.DepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => new { x.Role, x.DisplayName }).IsUnique();
         });
 
         modelBuilder.Entity<CheckpointResponse>(e =>

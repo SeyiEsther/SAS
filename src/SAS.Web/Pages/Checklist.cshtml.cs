@@ -17,11 +17,13 @@ public class ChecklistModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly ChecklistLoadService _load;
+    private readonly AccessService _access;
 
-    public ChecklistModel(AppDbContext db, ChecklistLoadService load)
+    public ChecklistModel(AppDbContext db, ChecklistLoadService load, AccessService access)
     {
         _db = db;
         _load = load;
+        _access = access;
     }
 
     public Area? Area { get; set; }
@@ -37,6 +39,19 @@ public class ChecklistModel : PageModel
     public int AnsweredCount { get; set; }
     public int TotalCount { get; set; }
     public List<GridCategoryVm> GridCategories { get; set; } = new();
+
+    /// <summary>Signed-in user, and whether they're allowed to sign off / answer HOD-only checks.</summary>
+    public bool IsHod { get; set; }
+    public string CurrentUserLabel { get; set; } = "";
+    public List<Person> Hods { get; set; } = new();
+
+    /// <summary>Issues raised on checks the audit says must be escalated, with the window they must be escalated in.</summary>
+    public List<EscalationVm> Escalations { get; set; } = new();
+
+    public record EscalationVm(string Text, string EscalateTo, string? Window, string? Notes);
+
+    public static bool IsHodOnly(TaskItem item) =>
+        string.Equals(item.ResponsibleRole, PersonRole.Hod, StringComparison.OrdinalIgnoreCase);
 
     public class GridCategoryVm
     {
@@ -76,6 +91,20 @@ public class ChecklistModel : PageModel
         IsGridMode = result.IsGridMode;
 
         (AnsweredCount, TotalCount) = ChecklistProgress.ComputeProgress(Items, Submission);
+
+        IsHod = await _access.IsHodAsync();
+        CurrentUserLabel = _access.CurrentUser.Label;
+        Hods = await _access.GetHodsAsync();
+
+        // Anything answered as an Issue on a check the audit says escalates.
+        Escalations = Items
+            .Where(i => !string.IsNullOrWhiteSpace(i.EscalateToRole))
+            .Select(i => new { Item = i, Resp = Submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == i.Id) })
+            .Where(x => x.Resp is not null &&
+                        (x.Resp.Status == ResponseStatus.Issue ||
+                         x.Resp.CheckpointResponses.Any(c => c.Status == ResponseStatus.Issue)))
+            .Select(x => new EscalationVm(x.Item.Text, x.Item.EscalateToRole!, x.Item.EscalationWindow, x.Resp!.Notes))
+            .ToList();
 
         if (IsGridMode)
         {

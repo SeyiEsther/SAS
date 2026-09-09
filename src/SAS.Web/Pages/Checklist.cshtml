@@ -72,11 +72,43 @@
         </div>
     </div>
 
+    @if (Model.Escalations.Any())
+    {
+        <div class="escalation-card">
+            <div class="escalation-head">@Model.Escalations.Count issue@(Model.Escalations.Count == 1 ? "" : "s") to escalate</div>
+            @foreach (var esc in Model.Escalations)
+            {
+                <div class="escalation-row">
+                    <span class="escalation-text">@esc.Text</span>
+                    <span class="escalation-meta">→ @esc.EscalateTo@(esc.Window is not null ? $" · {esc.Window}" : "")</span>
+                </div>
+            }
+        </div>
+    }
+
     <div class="card">
         <div class="section-title">HOD sign-off</div>
         <div class="field" style="margin-bottom:0">
             <label for="completedBy">HOD who reviewed and signed off this checklist</label>
-            <input type="text" id="completedBy" value="@submission.CompletedBy" placeholder="Not yet signed off" @(Model.IsReadOnly ? "disabled" : "") />
+            @if (Model.IsReadOnly)
+            {
+                <input type="text" id="completedBy" value="@submission.CompletedBy" disabled />
+            }
+            else if (Model.IsHod)
+            {
+                <select id="completedBy">
+                    <option value="">Select the signing HOD…</option>
+                    @foreach (var hod in Model.Hods)
+                    {
+                        <option value="@hod.DisplayName" selected="@(submission.CompletedBy == hod.DisplayName || (submission.CompletedBy is null && SAS.Web.Services.PortalNameMatcher.Matches(hod.DisplayName, Model.CurrentUserLabel)))">@hod.DisplayName</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input type="text" id="completedBy" value="" placeholder="Not yet signed off" disabled />
+                <div class="q-hint" style="margin-top:6px">Signed in as <strong>@Model.CurrentUserLabel</strong>. Only an HOD can sign this checklist off — fill the checks in and hand it to an HOD to complete.</div>
+            }
         </div>
     </div>
 
@@ -113,9 +145,15 @@
                             var resp = submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == item.Id);
                             var answered = SAS.Web.Services.ChecklistProgress.IsItemAnswered(item, submission);
                             var hint = $"Checked by {item.ResponsibleRole}{(item.EscalateToRole is not null ? $" — escalate to {item.EscalateToRole}" : "")}{(item.EscalationWindow is not null ? $" ({item.EscalationWindow})" : "")}";
+                            var hodOnly = SAS.Web.Pages.ChecklistModel.IsHodOnly(item);
+                            var locked = Model.IsReadOnly || (hodOnly && !Model.IsHod);
                             <tr class="dr" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
                                 <td class="ql">
                                     @item.Text
+                                    @if (hodOnly)
+                                    {
+                                        <span class="hod-badge" title="Only an HOD can answer this check">HOD only</span>
+                                    }
                                     <div class="q-hint">@hint</div>
                                 </td>
                                 @if (item.IsTimeBoxed)
@@ -125,8 +163,8 @@
                                         var cr = resp?.CheckpointResponses.FirstOrDefault(c => c.TaskCheckpointId == cp.Id);
                                         <td class="cell" data-checkpoint-id="@cp.Id">
                                             <div class="yn-group">
-                                                <button type="button" class="y @(cr?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Y</button>
-                                                <button type="button" class="n @(cr?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>N</button>
+                                                <button type="button" class="y @(cr?.Status == "Done" ? "active" : "")" data-action="Done" @(locked ? "disabled" : "")>Y</button>
+                                                <button type="button" class="n @(cr?.Status == "Issue" ? "active" : "")" data-action="Issue" @(locked ? "disabled" : "")>N</button>
                                             </div>
                                         </td>
                                     }
@@ -135,8 +173,8 @@
                                 {
                                     <td class="cell" colspan="@cols" style="text-align:left;padding:4px 14px">
                                         <div class="wide-toggle">
-                                            <button type="button" class="done @(resp?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Done</button>
-                                            <button type="button" class="issue @(resp?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>Issue</button>
+                                            <button type="button" class="done @(resp?.Status == "Done" ? "active" : "")" data-action="Done" @(locked ? "disabled" : "")>Done</button>
+                                            <button type="button" class="issue @(resp?.Status == "Issue" ? "active" : "")" data-action="Issue" @(locked ? "disabled" : "")>Issue</button>
                                         </div>
                                     </td>
                                 }
@@ -144,7 +182,7 @@
                             <tr class="nr" data-note-row>
                                 <td class="ql">Description</td>
                                 <td class="nc" colspan="@cols">
-                                    <textarea placeholder="Notes…" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
+                                    <textarea placeholder="Notes…" @(locked ? "disabled" : "")>@resp?.Notes</textarea>
                                 </td>
                             </tr>
                         }
@@ -155,40 +193,56 @@
     }
     else
     {
+        var taskNo = 0;
         @foreach (var item in items)
         {
+            taskNo++;
             var resp = submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == item.Id);
             var statusClass = resp?.Status == "Done" ? "status-done" : resp?.Status == "Issue" ? "status-issue" : "";
             var answered = SAS.Web.Services.ChecklistProgress.IsItemAnswered(item, submission);
-            <div class="task-card @statusClass" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
-                <div class="task-text">@item.Text</div>
+            var hodOnly = SAS.Web.Pages.ChecklistModel.IsHodOnly(item);
+            var locked = Model.IsReadOnly || (hodOnly && !Model.IsHod);
+            <div class="task-card @statusClass @(answered ? "is-answered" : "")" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
+                <div class="task-head">
+                    <span class="task-no">@taskNo</span>
+                    <div class="task-text">
+                        @item.Text
+                        @if (hodOnly)
+                        {
+                            <span class="hod-badge" title="Only an HOD can answer this check">HOD only</span>
+                        }
+                    </div>
+                    <span class="task-tick" data-task-tick aria-hidden="true">@(answered ? "✓" : "")</span>
+                </div>
 
                 @if (item.IsTimeBoxed)
                 {
-                    foreach (var cp in item.Checkpoints.OrderBy(c => c.SortOrder))
-                    {
-                        var cr = resp?.CheckpointResponses.FirstOrDefault(c => c.TaskCheckpointId == cp.Id);
-                        <div class="checkpoint-row" data-checkpoint-id="@cp.Id">
-                            <div class="cp-label">@cp.Label</div>
-                            <div class="cp-btns">
-                                <button type="button" class="cp-btn @(cr?.Status == "Done" ? "active-done" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Done</button>
-                                <button type="button" class="cp-btn @(cr?.Status == "Issue" ? "active-issue" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>Issue</button>
+                    <div class="cp-grid">
+                        @foreach (var cp in item.Checkpoints.OrderBy(c => c.SortOrder))
+                        {
+                            var cr = resp?.CheckpointResponses.FirstOrDefault(c => c.TaskCheckpointId == cp.Id);
+                            <div class="cp-cell" data-checkpoint-id="@cp.Id">
+                                <div class="cp-label">@cp.Label</div>
+                                <div class="cp-btns">
+                                    <button type="button" class="cp-btn @(cr?.Status == "Done" ? "active-done" : "")" data-action="Done" @(locked ? "disabled" : "")>Done</button>
+                                    <button type="button" class="cp-btn @(cr?.Status == "Issue" ? "active-issue" : "")" data-action="Issue" @(locked ? "disabled" : "")>Issue</button>
+                                </div>
                             </div>
-                        </div>
-                    }
+                        }
+                    </div>
                     <div class="task-notes" data-note-block style="display:@((resp?.CheckpointResponses.Any(c => c.Status == "Issue") == true) ? "block" : "none")">
-                        <textarea placeholder="Describe the issue (required)" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
+                        <textarea placeholder="Describe the issue (required)" @(locked ? "disabled" : "")>@resp?.Notes</textarea>
                         <div class="hint">Notes are required while any checkpoint above is marked Issue.</div>
                     </div>
                 }
                 else
                 {
                     <div class="task-actions">
-                        <button type="button" class="btn-done @(resp?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Done</button>
-                        <button type="button" class="btn-issue @(resp?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>Issue</button>
+                        <button type="button" class="btn-done @(resp?.Status == "Done" ? "active" : "")" data-action="Done" @(locked ? "disabled" : "")>Done</button>
+                        <button type="button" class="btn-issue @(resp?.Status == "Issue" ? "active" : "")" data-action="Issue" @(locked ? "disabled" : "")>Issue</button>
                     </div>
                     <div class="task-notes" data-note-block style="display:@(resp?.Status == "Issue" ? "block" : "none")">
-                        <textarea placeholder="Describe the issue (required)" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
+                        <textarea placeholder="Describe the issue (required)" @(locked ? "disabled" : "")>@resp?.Notes</textarea>
                         <div class="hint">Notes are required when Issue is selected.</div>
                     </div>
                 }
