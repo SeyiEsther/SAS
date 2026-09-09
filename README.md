@@ -42,12 +42,13 @@ docs/sql/                Plain SQL equivalents of every migration, for SSMS
 - SQL Server (any edition) reachable from where you run the app
 - `dotnet-ef` tool: `dotnet tool install --global dotnet-ef --version 8.0.10`
 
-## Configuring the connection string (never commit this)
+## Configuring the connection string
 
-The connection string is **not** hardcoded anywhere in the repo.
-`appsettings.json` ships with an empty `ConnectionStrings:Default`, and
-`appsettings.Development.json` (gitignored) is where you put your real local
-value. Options, in order of preference:
+`appsettings.json` currently carries the live `csmsvr02` connection string
+(server, `db_Public_User`, password) committed in plaintext, at the repo
+owner's explicit request. If that's ever revisited, the app supports the
+usual safer options without any code change — `GetConnectionString("Default")`
+just reads whichever of these is present, in order of precedence:
 
 1. **User secrets** (recommended for local dev):
    ```
@@ -55,7 +56,7 @@ value. Options, in order of preference:
    dotnet user-secrets set "ConnectionStrings:Default" "Server=YOUR_SERVER;Database=Rittal_Support;User Id=...;Password=...;TrustServerCertificate=True"
    ```
 2. **Environment variable**: `ConnectionStrings__Default`
-3. **`appsettings.Development.json`** (gitignored — safe to edit locally, never committed)
+3. **`appsettings.Development.json`** (gitignored — already has the same value as `appsettings.json` for local dev)
 
 ## Applying migrations (EF CLI)
 
