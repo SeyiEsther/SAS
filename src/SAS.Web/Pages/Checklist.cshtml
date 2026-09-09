@@ -25,11 +25,11 @@
      data-total="@Model.TotalCount"
      data-answered="@Model.AnsweredCount"
      data-readonly="@(Model.IsReadOnly ? "1" : "0")"
-     data-save-task-url="?handler=SaveTask"
-     data-save-checkpoint-url="?handler=SaveCheckpoint"
-     data-save-notes-url="?handler=SaveNotes"
-     data-save-meta-url="?handler=SaveMeta"
-     data-complete-url="?handler=Complete"
+     data-save-task-url="/api/checklist/save-task"
+     data-save-checkpoint-url="/api/checklist/save-checkpoint"
+     data-save-notes-url="/api/checklist/save-notes"
+     data-save-meta-url="/api/checklist/save-meta"
+     data-complete-url="/api/checklist/complete"
      data-home-url="/">
 
     @Html.AntiForgeryToken()
@@ -103,7 +103,7 @@
                         @foreach (var item in cat.Items)
                         {
                             var resp = submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == item.Id);
-                            var answered = SAS.Web.Services.ChecklistService.IsItemAnswered(item, submission);
+                            var answered = SAS.Web.Services.ChecklistProgress.IsItemAnswered(item, submission);
                             <tr class="item-row" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
                                 <td class="qcell">
                                     <div class="item-text">@item.Text</div>
@@ -149,7 +149,7 @@
         {
             var resp = submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == item.Id);
             var statusClass = resp?.Status == "Done" ? "status-done" : resp?.Status == "Issue" ? "status-issue" : "";
-            var answered = SAS.Web.Services.ChecklistService.IsItemAnswered(item, submission);
+            var answered = SAS.Web.Services.ChecklistProgress.IsItemAnswered(item, submission);
             <div class="task-card @statusClass" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
                 <div class="task-text">@item.Text</div>
 
@@ -192,7 +192,7 @@
 
 <div class="action-bar">
     <a class="btn ghost" href="/">Leave &amp; come back later</a>
-    <a class="btn ghost" href="/Checklist?handler=Pdf&areaId=@Model.Area!.Id&shiftId=@Model.Shift!.Id&date=@Model.ChecklistDate.ToString("yyyy-MM-dd")">Download PDF</a>
+    <a class="btn ghost" href="/api/checklist/pdf?areaId=@Model.Area!.Id&shiftId=@Model.Shift!.Id&date=@Model.ChecklistDate.ToString("yyyy-MM-dd")">Download PDF</a>
     @if (!Model.IsReadOnly)
     {
         <button class="btn primary" id="complete-btn" type="button">Complete checklist</button>

@@ -1,15 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using SAS.Web.Data;
 using SAS.Web.Models;
+using SAS.Web.Services;
 
 namespace SAS.Web.Pages.Admin;
 
 public class DepartmentsModel : PageModel
 {
-    private readonly AppDbContext _db;
-    public DepartmentsModel(AppDbContext db) { _db = db; }
+    private readonly AdminService _admin;
+    public DepartmentsModel(AdminService admin) { _admin = admin; }
 
     public List<Department> Departments { get; set; } = new();
 
@@ -20,62 +19,30 @@ public class DepartmentsModel : PageModel
 
     public async Task OnGetAsync()
     {
-        Departments = await _db.Departments.OrderBy(d => d.SortOrder).ToListAsync();
+        Departments = await _admin.GetDepartmentsAsync();
     }
 
     public async Task<IActionResult> OnPostCreateAsync(string name, int sortOrder)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            Error = "Name is required.";
-            return RedirectToPage();
-        }
-        _db.Departments.Add(new Department { Name = name.Trim(), SortOrder = sortOrder, IsActive = true });
-        try
-        {
-            await _db.SaveChangesAsync();
-            Message = $"Department \"{name}\" created.";
-        }
-        catch (DbUpdateException)
-        {
-            Error = "A department with that name already exists.";
-        }
+        var result = await _admin.CreateDepartmentAsync(name, sortOrder);
+        Message = result.Message;
+        Error = result.Error;
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostUpdateAsync(int id, string name, int sortOrder, bool isActive)
     {
-        var dept = await _db.Departments.FindAsync(id);
-        if (dept is null) return RedirectToPage();
-        dept.Name = name.Trim();
-        dept.SortOrder = sortOrder;
-        dept.IsActive = isActive;
-        try
-        {
-            await _db.SaveChangesAsync();
-            Message = "Department updated.";
-        }
-        catch (DbUpdateException)
-        {
-            Error = "A department with that name already exists.";
-        }
+        var result = await _admin.UpdateDepartmentAsync(id, name, sortOrder, isActive);
+        Message = result.Message;
+        Error = result.Error;
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var dept = await _db.Departments.FindAsync(id);
-        if (dept is null) return RedirectToPage();
-        _db.Departments.Remove(dept);
-        try
-        {
-            await _db.SaveChangesAsync();
-            Message = "Department deleted.";
-        }
-        catch (DbUpdateException)
-        {
-            Error = "Cannot delete this department — remove its areas and shifts first.";
-        }
+        var result = await _admin.DeleteDepartmentAsync(id);
+        Message = result.Message;
+        Error = result.Error;
         return RedirectToPage();
     }
 }

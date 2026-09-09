@@ -12,5 +12,8 @@ obj/
 **/appsettings.Local.json
 .env
 
+## Data Protection keys — generated locally, never shared or committed
+**/SAS-dataprotection-keys/
+
 ## OS
 .DS_Store

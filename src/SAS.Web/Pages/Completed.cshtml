@@ -101,7 +101,7 @@
                                 <td>@(row.CompletedBy ?? "—")</td>
                                 <td style="white-space:nowrap">
                                     <a class="btn small" href="/Checklist?areaId=@row.AreaId&shiftId=@row.ShiftId&date=@row.Date.ToString("yyyy-MM-dd")">Open</a>
-                                    <a class="btn small" href="/Checklist?handler=Pdf&areaId=@row.AreaId&shiftId=@row.ShiftId&date=@row.Date.ToString("yyyy-MM-dd")">PDF</a>
+                                    <a class="btn small" href="/api/checklist/pdf?areaId=@row.AreaId&shiftId=@row.ShiftId&date=@row.Date.ToString("yyyy-MM-dd")">PDF</a>
                                 </td>
                             </tr>
                         }

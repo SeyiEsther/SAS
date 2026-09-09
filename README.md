@@ -10,14 +10,29 @@ code. Stores and Dispatch could both be deleted and re-entered through
 
 ## Project layout
 
+Structured to match the conventions of `github.com/SeyiEsther/TL` (the
+Production Audit System): Razor Pages only ever render (GET); every write
+goes through a Controller; business logic lives in Services, not in
+PageModels or Controllers.
+
 ```
 SAS.sln
-src/SAS.Web/            ASP.NET Core Razor Pages app
+src/SAS.Web/            ASP.NET Core app (Razor Pages + API Controllers)
   Models/                Entity classes
   Data/AppDbContext.cs   EF Core DbContext + Fluent API configuration
   Migrations/            EF Core migrations (schema + seed data)
-  Pages/                 Checklist entry, Completed list, Admin CRUD
-  Services/              ChecklistService (save/progress logic), PdfExportService
+  Pages/                 GET-only: checklist entry render, Completed list, Admin CRUD forms
+  Controllers/           The writable surface — every save/complete/PDF request
+    ChecklistController    Save task, save checkpoint, save notes, save meta, complete
+    PdfController           GET /api/checklist/pdf — exports what's already saved in the DB
+  Services/              One service per concern, mirroring TL's Services/ split
+    ChecklistLoadService    Find-or-create a submission, load its task list (continuity)
+    ChecklistSaveService    Every individual autosave write
+    ChecklistCompletionService  Validates and performs sign-off
+    HistoryListService      Filterable Completed-checklists query
+    AdminService            Full CRUD for every configuration table
+    PdfExportService        QuestPDF rendering
+    ChecklistProgress       Shared "is this item answered / how many issues" helpers
 docs/sql/                Plain SQL equivalents of every migration, for SSMS
 ```
 
@@ -56,15 +71,24 @@ Dispatch's 24-check Warehouse audit) — all in one transaction per migration.
 
 ## Applying migrations directly in SSMS (no dotnet ef tooling required)
 
-Everything EF Core would run is also provided as plain, runnable T-SQL in
-`docs/sql/`:
+**There is exactly one file to run for a normal deploy:
+`docs/sql/000_FullDeploy_IdempotentFromScratch.sql`.** It creates the schema
+and seeds all the data, and it's idempotent — it checks
+`__EFMigrationsHistory` before doing anything, so running it again on a
+database that already has this schema is a safe no-op, not an error.
 
-| File | What it does |
-|---|---|
-| `docs/sql/000_FullDeploy_IdempotentFromScratch.sql` | Creates the database schema **and** seeds all data, from nothing. Idempotent — safe to re-run; already-applied migrations are skipped via `__EFMigrationsHistory`. **This is the one to run in SSMS against a brand-new database.** |
-| `docs/sql/001_InitialCreate.sql` | Schema only (tables, keys, unique indexes, foreign keys). |
-| `docs/sql/002_SeedInitialData.sql` | Seed data only (Departments, Areas, Shifts, TaskLists, TaskItems, TaskCheckpoints) — run after 001. |
-| `docs/sql/003_VerifySeedData.sql` | Verification queries, including the one confirming every Dispatch task item has `Category` populated. |
+**Before running anything**, run `docs/sql/999_DiagnoseCurrentState.sql`
+first — it's read-only and tells you whether the target database already has
+this schema (and, if so, whether the seed data landed correctly). If it
+already does, you don't need to run a deploy script at all.
+
+| File | What it does | When to run it |
+|---|---|---|
+| `docs/sql/999_DiagnoseCurrentState.sql` | Read-only: shows `__EFMigrationsHistory`, table row counts, and current Departments. | **Run this first, always.** |
+| `docs/sql/000_FullDeploy_IdempotentFromScratch.sql` | Schema + seed, idempotent. | The only script you need for a normal deploy or re-deploy. |
+| `docs/sql/003_VerifySeedData.sql` | Verification queries, including the one confirming every Dispatch task item has `Category` populated. | After 000, to confirm the seed looks right. |
+| `docs/sql/001_InitialCreate.sql` | Schema only — **not idempotent**, plain `CREATE TABLE`. | Reference only / advanced use (e.g. scripting just this one migration for a change-review tool). **Never run this against a database that might already have the schema** — it will fail with "already exists" on every table, exactly like the error from Sept 9: that happened because 001 was run again on top of a database 000 had already deployed successfully. |
+| `docs/sql/002_SeedInitialData.sql` | Seed data only — **not idempotent**, plain `INSERT`. | Same caveat as 001: reference only, never run on a database that already has the seed rows. |
 
 To create the database from nothing in SSMS: open a query window connected to
 your target server, `CREATE DATABASE SasSupportAudit;`, switch to it, then run
@@ -110,6 +134,22 @@ dotnet run
   in the task list has `Category` populated, and the **Stores card layout**
   (one task per card, Done/Issue, mandatory notes on Issue) otherwise — so the
   rendering follows the data, not a hardcoded department check.
+
+## Matching TL's structure — what was and wasn't carried over
+
+Per your instruction, the app's architecture now mirrors
+`github.com/SeyiEsther/TL`: Controllers own every write, Services are split
+one-per-concern, `Program.cs` persists Data Protection keys the same way TL
+does (so antiforgery tokens survive an app-pool recycle), and the
+`AddAntiforgery` header convention (`X-CSRF-TOKEN`) matches TL's exactly.
+
+One thing was **not** carried over: TL's Windows/Active-Directory
+authentication (`Microsoft.AspNetCore.Authentication.Negotiate`,
+`PortalAccessFilter`, `UserService`). Nothing in the original spec for this
+project asked for a login system or role-gated access, so adding one would be
+scope beyond what was requested. If you do want checklist access restricted
+to authenticated users (AD-integrated, matching TL), say so explicitly and
+I'll add it the same way TL does it.
 
 ## PDF export
 

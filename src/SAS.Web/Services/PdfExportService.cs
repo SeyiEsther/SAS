@@ -9,8 +9,8 @@ public class PdfExportService
 {
     public byte[] Export(ChecklistSubmission submission, TaskList taskList, List<TaskItem> items, Area area, Shift shift, Department department)
     {
-        var (answered, total) = ChecklistService.ComputeProgress(items, submission);
-        var issueCount = ChecklistService.CountIssues(items, submission);
+        var (answered, total) = ChecklistProgress.ComputeProgress(items, submission);
+        var issueCount = ChecklistProgress.CountIssues(items, submission);
 
         var document = Document.Create(container =>
         {
