@@ -73,13 +73,11 @@
         return null;
     }
 
+    // Card layout reveals its notes box only once an Issue is picked; the grid's
+    // note rows are always visible, the way TL's are.
     function showNoteBlock(itemEl, show) {
         var inline = itemEl.querySelector('[data-note-block]');
-        if (inline) { inline.style.display = show ? 'block' : 'none'; return; }
-        var next = itemEl.nextElementSibling;
-        if (next && next.hasAttribute('data-note-row')) {
-            next.style.display = show ? 'table-row' : 'none';
-        }
+        if (inline) inline.style.display = show ? 'block' : 'none';
     }
 
     // Non-timeboxed Done/Issue toggles (cards and grid wide-toggle rows)

@@ -4,43 +4,61 @@
     ViewData["Title"] = "Home";
 }
 
-<div class="page">
-    <div class="card">
-        <h1 style="font-size:20px;margin-bottom:4px">Safe Start Checklists</h1>
-        <p class="checklist-head meta">Pick a department, area and shift to start or resume today's checklist.</p>
-    </div>
+<div class="welcome-wrap">
+    <div class="welcome-card">
+        <div class="welcome-name">Safe Start Checklist</div>
+        <div class="welcome-time">@DateTime.Now.ToString("dddd d MMMM yyyy")</div>
 
-    @if (!Model.Departments.Any())
-    {
-        <div class="card empty-state">No departments configured yet. Set them up in <a href="/Admin">Admin</a>.</div>
-    }
+        <form method="post">
+            @Html.AntiForgeryToken()
 
-    @foreach (var dept in Model.Departments)
-    {
-        <div class="card">
-            <div class="section-title">@dept.Name</div>
-
-            @if (!dept.Areas.Any() || !dept.Shifts.Any())
-            {
-                <p style="color:var(--muted);font-size:13px">No areas or shifts configured for this department yet.</p>
-            }
-            else
-            {
-                <div class="picker-grid">
-                    @foreach (var area in dept.Areas)
-                    {
-                        <div class="picker-card">
-                            <h3>@area.Name</h3>
-                            <div class="picker-chip-row">
-                                @foreach (var shift in dept.Shifts)
-                                {
-                                    <a class="chip" href="/Checklist?areaId=@area.Id&shiftId=@shift.Id&date=@Model.Today.ToString("yyyy-MM-dd")">@shift.Name</a>
-                                }
-                            </div>
-                        </div>
-                    }
+            <div class="sf-row">
+                <div class="fl">
+                    <label>Date</label>
+                    <input type="date" name="ChecklistDate" value="@Model.ChecklistDate" required>
                 </div>
+                <div class="fl">
+                    <label>Shift <span style="color:var(--red)">*</span></label>
+                    <select name="ShiftId" required>
+                        <option value="">Select shift…</option>
+                        @foreach (var grp in Model.Shifts.GroupBy(s => s.Department!.Name))
+                        {
+                            <optgroup label="@grp.Key">
+                                @foreach (var shift in grp)
+                                {
+                                    <option value="@shift.Id" selected="@(Model.ShiftId == shift.Id)">@shift.Name</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="fl" style="margin-bottom:6px">
+                <label>Area <span style="color:var(--red)">*</span></label>
+                <select name="AreaId" required>
+                    <option value="">Select area…</option>
+                    @foreach (var grp in Model.Areas.GroupBy(a => a.Department!.Name))
+                    {
+                        <optgroup label="@grp.Key">
+                            @foreach (var area in grp)
+                            {
+                                var display = string.IsNullOrEmpty(area.DefaultLocation) || area.DefaultLocation == area.Name
+                                    ? area.Name
+                                    : $"{area.Name} ({area.DefaultLocation})";
+                                <option value="@area.Id" selected="@(Model.AreaId == area.Id)">@display</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <div class="err">@Model.Error</div>
             }
-        </div>
-    }
+
+            <button type="submit" class="welcome-btn primary">Start checklist &rarr;</button>
+        </form>
+    </div>
 </div>

@@ -85,17 +85,18 @@
         @foreach (var cat in Model.GridCategories)
         {
             var slug = SAS.Web.Pages.ChecklistModel.CategorySlug(cat.Category);
+            var cols = Math.Max(cat.Checkpoints.Count, 1);
             <div class="grid-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th class="qcol">@cat.Category</th>
+                            <th class="qcol">Question</th>
                             @foreach (var cp in cat.Checkpoints)
                             {
                                 <th class="hcol">
                                     @if (cp.Label.StartsWith("Hr "))
                                     {
-                                        <span class="hr-badge">@cp.Label.Substring(3)</span>
+                                        <text>Hr </text><span class="hnum">@cp.Label.Substring(3)</span>
                                     }
                                     else
                                     {
@@ -106,22 +107,23 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="sec-row cat-@slug"><td colspan="@(cat.Checkpoints.Count + 1)">@cat.Category</td></tr>
+                        <tr class="sec-row cat-@slug"><td class="acc"></td><td colspan="@cols">@cat.Category</td></tr>
                         @foreach (var item in cat.Items)
                         {
                             var resp = submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == item.Id);
                             var answered = SAS.Web.Services.ChecklistProgress.IsItemAnswered(item, submission);
-                            <tr class="item-row" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
-                                <td class="qcell">
-                                    <div class="item-text">@item.Text</div>
-                                    <div class="item-sub">Checked by @item.ResponsibleRole@(item.EscalateToRole is not null ? $" — escalate to {item.EscalateToRole}" : "")@(item.EscalationWindow is not null ? $" ({item.EscalationWindow})" : "")</div>
+                            var hint = $"Checked by {item.ResponsibleRole}{(item.EscalateToRole is not null ? $" — escalate to {item.EscalateToRole}" : "")}{(item.EscalationWindow is not null ? $" ({item.EscalationWindow})" : "")}";
+                            <tr class="dr" data-item data-item-id="@item.Id" data-timeboxed="@(item.IsTimeBoxed ? "1" : "0")" data-item-answered="@(answered ? "1" : "0")">
+                                <td class="ql">
+                                    @item.Text
+                                    <div class="q-hint">@hint</div>
                                 </td>
                                 @if (item.IsTimeBoxed)
                                 {
                                     foreach (var cp in cat.Checkpoints)
                                     {
                                         var cr = resp?.CheckpointResponses.FirstOrDefault(c => c.TaskCheckpointId == cp.Id);
-                                        <td data-checkpoint-id="@cp.Id">
+                                        <td class="cell" data-checkpoint-id="@cp.Id">
                                             <div class="yn-group">
                                                 <button type="button" class="y @(cr?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Y</button>
                                                 <button type="button" class="n @(cr?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>N</button>
@@ -131,7 +133,7 @@
                                 }
                                 else
                                 {
-                                    <td class="wide-cell" colspan="@Math.Max(cat.Checkpoints.Count, 1)">
+                                    <td class="cell" colspan="@cols" style="text-align:left;padding:4px 14px">
                                         <div class="wide-toggle">
                                             <button type="button" class="done @(resp?.Status == "Done" ? "active" : "")" data-action="Done" @(Model.IsReadOnly ? "disabled" : "")>Done</button>
                                             <button type="button" class="issue @(resp?.Status == "Issue" ? "active" : "")" data-action="Issue" @(Model.IsReadOnly ? "disabled" : "")>Issue</button>
@@ -139,9 +141,10 @@
                                     </td>
                                 }
                             </tr>
-                            <tr class="grid-note-row" data-note-row style="display:@((resp?.Notes is { Length: > 0 }) || (item.IsTimeBoxed && resp?.CheckpointResponses.Any(c => c.Status == "Issue") == true) ? "table-row" : "none")">
-                                <td colspan="@(cat.Checkpoints.Count + 1)">
-                                    <textarea placeholder="Notes (required when any answer is N)" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
+                            <tr class="nr" data-note-row>
+                                <td class="ql">Description</td>
+                                <td class="nc" colspan="@cols">
+                                    <textarea placeholder="Notes…" @(Model.IsReadOnly ? "disabled" : "")>@resp?.Notes</textarea>
                                 </td>
                             </tr>
                         }
