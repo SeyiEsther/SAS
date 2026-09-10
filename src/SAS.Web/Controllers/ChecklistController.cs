@@ -48,9 +48,15 @@ public class ChecklistController : ControllerBase
         return null;
     }
 
-    /// <summary>Whoever is signed in gets stamped on the answer — not a name typed into a box.</summary>
-    private string Actor(string? supplied) =>
-        string.IsNullOrWhiteSpace(_access.CurrentUser.Label) ? (supplied ?? "Unknown") : _access.CurrentUser.Label;
+    /// <summary>
+    /// Whoever is signed in gets stamped on the answer — their actual name,
+    /// resolved from the account number, not a name typed into a box.
+    /// </summary>
+    private async Task<string> ActorAsync(string? supplied)
+    {
+        var name = await _access.CurrentDisplayNameAsync();
+        return string.IsNullOrWhiteSpace(name) ? (supplied ?? "Unknown") : name;
+    }
 
     public record SaveTaskRequest(int SubmissionId, int ItemId, string Status, string? Notes, string? Actor);
 
@@ -69,7 +75,7 @@ public class ChecklistController : ControllerBase
         var denied = await DenyIfNotAllowedAsync(req.ItemId);
         if (denied is not null) return denied;
 
-        await _save.SaveTaskResponseAsync(req.SubmissionId, req.ItemId, req.Status, req.Notes, Actor(req.Actor));
+        await _save.SaveTaskResponseAsync(req.SubmissionId, req.ItemId, req.Status, req.Notes, await ActorAsync(req.Actor));
         return Ok(new { ok = true });
     }
 
@@ -86,7 +92,7 @@ public class ChecklistController : ControllerBase
         var denied = await DenyIfNotAllowedAsync(req.ItemId);
         if (denied is not null) return denied;
 
-        await _save.SaveCheckpointResponseAsync(req.SubmissionId, req.ItemId, req.CheckpointId, req.Status, req.Notes, Actor(req.Actor));
+        await _save.SaveCheckpointResponseAsync(req.SubmissionId, req.ItemId, req.CheckpointId, req.Status, req.Notes, await ActorAsync(req.Actor));
         return Ok(new { ok = true });
     }
 
@@ -98,7 +104,7 @@ public class ChecklistController : ControllerBase
         var denied = await DenyIfNotAllowedAsync(req.ItemId);
         if (denied is not null) return denied;
 
-        await _save.SaveNotesAsync(req.SubmissionId, req.ItemId, req.Notes, Actor(req.Actor));
+        await _save.SaveNotesAsync(req.SubmissionId, req.ItemId, req.Notes, await ActorAsync(req.Actor));
         return Ok(new { ok = true });
     }
 
@@ -107,7 +113,7 @@ public class ChecklistController : ControllerBase
     [HttpPost("save-meta")]
     public async Task<IActionResult> SaveMeta([FromBody] SaveMetaRequest req)
     {
-        var ok = await _save.SaveMetaAsync(req.SubmissionId, req.AuditorNames, req.Location, Actor(req.Actor));
+        var ok = await _save.SaveMetaAsync(req.SubmissionId, req.AuditorNames, req.Location, await ActorAsync(req.Actor));
         return ok ? Ok(new { ok = true }) : NotFound();
     }
 
@@ -122,7 +128,7 @@ public class ChecklistController : ControllerBase
                 new { error = "Only an HOD can sign a checklist off." });
         }
 
-        var result = await _completion.CompleteAsync(req.SubmissionId, req.CompletedBy ?? Actor(null));
+        var result = await _completion.CompleteAsync(req.SubmissionId, req.CompletedBy ?? await ActorAsync(null));
         if (!result.Success)
         {
             return BadRequest(new { error = result.Error });

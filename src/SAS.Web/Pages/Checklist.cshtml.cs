@@ -93,7 +93,7 @@ public class ChecklistModel : PageModel
         (AnsweredCount, TotalCount) = ChecklistProgress.ComputeProgress(Items, Submission);
 
         IsHod = await _access.IsHodAsync();
-        CurrentUserLabel = _access.CurrentUser.Label;
+        CurrentUserLabel = await _access.CurrentDisplayNameAsync();
         Hods = await _access.GetHodsAsync();
 
         // Anything answered as an Issue on a check the audit says escalates.

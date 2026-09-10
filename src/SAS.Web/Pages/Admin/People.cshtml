@@ -14,8 +14,14 @@
             must match Active Directory.
         </p>
         <p class="q-hint" style="margin-top:8px">
-            You are signed in as <strong>@Model.CurrentUserLabel</strong> —
+            You are signed in on account <strong>@Model.CurrentAccountName</strong>, showing as
+            <strong>@Model.CurrentUserLabel</strong> —
             @(Model.CurrentUserIsHod ? "recognised as an HOD." : "not currently recognised as an HOD.")
+        </p>
+        <p class="q-hint">
+            Windows accounts here are numbers. If someone's number is showing instead of their name,
+            put that number in the <strong>Account name</strong> column against their row below and the
+            app will show their real name everywhere — no Active Directory lookup needed.
         </p>
     </div>
     @await Html.PartialAsync("_AdminNav")

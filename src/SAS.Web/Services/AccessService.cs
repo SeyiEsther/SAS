@@ -79,11 +79,50 @@ public class AccessService
     {
         var user = CurrentUser;
         var people = await GetPeopleAsync();
+
+        // Account name is matched exactly — these are numbers (uk12345), and
+        // fuzzy/prefix matching on a number would happily match the wrong person.
+        var byAccount = people.FirstOrDefault(p =>
+            !string.IsNullOrWhiteSpace(p.Username) &&
+            string.Equals(p.Username!.Trim(), user.Username, StringComparison.OrdinalIgnoreCase));
+        if (byAccount is not null) return byAccount;
+
+        // Otherwise fall back to matching the AD display name against the list.
         return people.FirstOrDefault(p =>
             PortalNameMatcher.Matches(p.DisplayName, user.DisplayName) ||
-            PortalNameMatcher.Matches(p.DisplayName, user.Username) ||
-            (p.Username is not null && PortalNameMatcher.Matches(p.Username, user.Username)));
+            PortalNameMatcher.Matches(p.DisplayName, user.Username));
     }
+
+    /// <summary>
+    /// The person's actual name for display and for stamping on records.
+    /// Windows accounts here are numbers, so: the name mapped to that account
+    /// number in People wins, then whatever AD gave us, and only as a last
+    /// resort the raw account number.
+    /// </summary>
+    public async Task<string> CurrentDisplayNameAsync()
+    {
+        var user = CurrentUser;
+
+        try
+        {
+            var person = await ResolveCurrentPersonAsync();
+            if (person is not null && !string.IsNullOrWhiteSpace(person.DisplayName))
+                return person.DisplayName;
+        }
+        catch
+        {
+            // Database unreachable — fall through to whatever we already know.
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.DisplayName) &&
+            !string.Equals(user.DisplayName, user.Username, StringComparison.OrdinalIgnoreCase))
+            return user.DisplayName;
+
+        return user.Username;
+    }
+
+    /// <summary>The raw Windows account name, so an admin can map it to a person.</summary>
+    public string CurrentAccountName => CurrentUser.Username;
 
     public async Task<bool> IsHodAsync()
     {

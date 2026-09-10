@@ -76,15 +76,48 @@ public class UserService
         try
         {
             using var ctx = new PrincipalContext(ContextType.Domain);
-            using var user = UserPrincipal.FindByIdentity(ctx, IdentityType.SamAccountName, username);
-            if (user != null)
-                return user.DisplayName ?? user.GivenName ?? username;
+
+            // Accounts here are numbers (e.g. "uk12345"), so try every identity
+            // type AD might hold that number under before giving up — a number
+            // on screen is no use to anyone.
+            foreach (var idType in new[]
+                     {
+                         IdentityType.SamAccountName,
+                         IdentityType.UserPrincipalName,
+                         IdentityType.Name,
+                     })
+            {
+                using var user = UserPrincipal.FindByIdentity(ctx, idType, username);
+                var name = FullNameOf(user);
+                if (name is not null) return name;
+            }
+
+            // Last resort: some directories file the number under employeeId
+            // rather than the account name.
+            using var byEmployeeId = new PrincipalSearcher(new UserPrincipal(ctx) { EmployeeId = username });
+            if (byEmployeeId.FindOne() is UserPrincipal found)
+            {
+                var name = FullNameOf(found);
+                if (name is not null) return name;
+            }
         }
         catch (Exception ex)
         {
             _log.LogWarning("Could not get display name from AD for {User}: {Msg}", username, ex.Message);
         }
         return username;
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static string? FullNameOf(UserPrincipal? user)
+    {
+        if (user is null) return null;
+
+        if (!string.IsNullOrWhiteSpace(user.DisplayName)) return user.DisplayName;
+        if (!string.IsNullOrWhiteSpace(user.GivenName) || !string.IsNullOrWhiteSpace(user.Surname))
+            return $"{user.GivenName} {user.Surname}".Trim();
+        if (!string.IsNullOrWhiteSpace(user.Name)) return user.Name;
+        return null;
     }
 }
 

@@ -19,6 +19,7 @@ public class PeopleModel : PageModel
     public List<Person> People { get; set; } = new();
     public List<Department> Departments { get; set; } = new();
     public string CurrentUserLabel { get; set; } = "";
+    public string CurrentAccountName { get; set; } = "";
     public bool CurrentUserIsHod { get; set; }
 
     public static readonly string[] Roles = [PersonRole.Hod, PersonRole.SeniorOperator];
@@ -32,7 +33,8 @@ public class PeopleModel : PageModel
     {
         People = await _admin.GetAllPeopleAsync();
         Departments = await _admin.GetDepartmentsAsync();
-        CurrentUserLabel = _access.CurrentUser.Label;
+        CurrentUserLabel = await _access.CurrentDisplayNameAsync();
+        CurrentAccountName = _access.CurrentAccountName;
         CurrentUserIsHod = await _access.IsHodAsync();
     }
 

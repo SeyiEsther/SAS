@@ -2,11 +2,12 @@
 @{
     var pg = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
     var isAdminArea = pg == "/Admin" || pg.StartsWith("/Admin");
-    var currentUser = Access.CurrentUser;
-    // The role lookup hits the database. If that's unreachable the header must
+    // Windows accounts here are numbers, so show the person's actual name.
+    // Both lookups hit the database; if that's unreachable the header must
     // still render — otherwise even the error page fails to load.
+    var userLabel = Access.CurrentAccountName;
     var isHod = false;
-    try { isHod = await Access.IsHodAsync(); } catch { }
+    try { userLabel = await Access.CurrentDisplayNameAsync(); isHod = await Access.IsHodAsync(); } catch { }
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -30,10 +31,10 @@
         <div class="subbrand">Support Audit System</div>
     </div>
     <div class="topbar-right">
-        @if (!string.IsNullOrWhiteSpace(currentUser.Label) && currentUser.Label != "unknown")
+        @if (!string.IsNullOrWhiteSpace(userLabel) && userLabel != "unknown")
         {
-            <span class="user-chip" title="@(isHod ? "Signed in as an HOD — you can sign checklists off" : "Signed in")">
-                @currentUser.Label@(isHod ? " · HOD" : "")
+            <span class="user-chip" title="Signed in as @Access.CurrentAccountName@(isHod ? " — an HOD, so you can sign checklists off" : "")">
+                @userLabel@(isHod ? " · HOD" : "")
             </span>
         }
         <a class="tbtn @(pg == "/Index" ? "active" : "")" href="/">Home</a>

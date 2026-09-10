@@ -63,7 +63,7 @@
         <div class="field-row">
             <div class="field">
                 <label for="auditorNames">Auditor name(s)</label>
-                <input type="text" id="auditorNames" value="@submission.AuditorNames" placeholder="Names of everyone on this checklist" @(Model.IsReadOnly ? "disabled" : "") />
+                <input type="text" id="auditorNames" value="@(submission.AuditorNames ?? Model.CurrentUserLabel)" placeholder="Names of everyone on this checklist" @(Model.IsReadOnly ? "disabled" : "") />
             </div>
             <div class="field">
                 <label for="location">Location</label>
