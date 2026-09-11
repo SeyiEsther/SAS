@@ -7,12 +7,6 @@ using SAS.Web.Services;
 
 namespace SAS.Web.Pages;
 
-/// <summary>
-/// The checklist entry screen. This page only ever renders (GET) — every
-/// write (save a task, save a checkpoint, complete) goes through
-/// Controllers/ChecklistController, and PDF export through
-/// Controllers/PdfController, so the writable surface lives in one place.
-/// </summary>
 public class ChecklistModel : PageModel
 {
     private readonly AppDbContext _db;
@@ -40,12 +34,10 @@ public class ChecklistModel : PageModel
     public int TotalCount { get; set; }
     public List<GridCategoryVm> GridCategories { get; set; } = new();
 
-    /// <summary>Signed-in user, and whether they're allowed to sign off / answer HOD-only checks.</summary>
     public bool IsHod { get; set; }
     public string CurrentUserLabel { get; set; } = "";
     public List<Person> Hods { get; set; } = new();
 
-    /// <summary>Issues raised on checks the audit says must be escalated, with the window they must be escalated in.</summary>
     public List<EscalationVm> Escalations { get; set; } = new();
 
     public record EscalationVm(string Text, string EscalateTo, string? Window, string? Notes);
@@ -96,7 +88,6 @@ public class ChecklistModel : PageModel
         CurrentUserLabel = await _access.CurrentDisplayNameAsync();
         Hods = await _access.GetHodsAsync();
 
-        // Anything answered as an Issue on a check the audit says escalates.
         Escalations = Items
             .Where(i => !string.IsNullOrWhiteSpace(i.EscalateToRole))
             .Select(i => new { Item = i, Resp = Submission.TaskResponses.FirstOrDefault(r => r.TaskItemId == i.Id) })

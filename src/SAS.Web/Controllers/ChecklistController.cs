@@ -6,12 +6,6 @@ using SAS.Web.Services;
 
 namespace SAS.Web.Controllers;
 
-/// <summary>
-/// The save/complete API consumed by the checklist entry page's JS. Kept
-/// separate from the Razor Page (which only ever does the initial GET
-/// render) so every write path lives in one small, testable surface — the
-/// same split TL uses between its Pages and its Controllers.
-/// </summary>
 [ApiController]
 [Route("api/checklist")]
 [AutoValidateAntiforgeryToken]
@@ -30,11 +24,6 @@ public class ChecklistController : ControllerBase
         _db = db;
     }
 
-    /// <summary>
-    /// The audit assigns some checks to the HOD (ResponsibleRole = "HOD").
-    /// Those can only be answered by an HOD — enforced here, not just hidden
-    /// in the UI.
-    /// </summary>
     private async Task<IActionResult?> DenyIfNotAllowedAsync(int itemId)
     {
         var item = await _db.TaskItems.AsNoTracking().FirstOrDefaultAsync(i => i.Id == itemId);
@@ -48,10 +37,6 @@ public class ChecklistController : ControllerBase
         return null;
     }
 
-    /// <summary>
-    /// Whoever is signed in gets stamped on the answer — their actual name,
-    /// resolved from the account number, not a name typed into a box.
-    /// </summary>
     private async Task<string> ActorAsync(string? supplied)
     {
         var name = await _access.CurrentDisplayNameAsync();

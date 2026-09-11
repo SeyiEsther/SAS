@@ -12,12 +12,6 @@ public class ChecklistLoadResult
     public bool IsGridMode { get; init; }
 }
 
-/// <summary>
-/// Finds or creates the ChecklistSubmission for an Area + Shift + Date and
-/// loads the current TaskList's items and checkpoints alongside it.
-/// Continuity (resuming a checklist someone else started) matches on
-/// Area + Shift + Date only — never a person's name.
-/// </summary>
 public class ChecklistLoadService
 {
     private readonly AppDbContext _db;
@@ -73,7 +67,6 @@ public class ChecklistLoadService
         };
     }
 
-    /// <summary>Loads a submission already known to exist, for read-only views (PDF export, Completed list).</summary>
     public async Task<ChecklistLoadResult?> GetExistingAsync(int areaId, int shiftId, DateOnly date)
     {
         var submission = await _db.ChecklistSubmissions

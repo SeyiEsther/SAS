@@ -81,14 +81,11 @@
         return null;
     }
 
-    // Card layout reveals its notes box only once an Issue is picked; the grid's
-    // note rows are always visible, the way TL's are.
     function showNoteBlock(itemEl, show) {
         var inline = itemEl.querySelector('[data-note-block]');
         if (inline) inline.style.display = show ? 'block' : 'none';
     }
 
-    // Non-timeboxed Done/Issue toggles (cards and grid wide-toggle rows)
     root.querySelectorAll('[data-item][data-timeboxed="0"]').forEach(function (itemEl) {
         var itemId = parseInt(itemEl.dataset.itemId, 10);
         var buttons = itemEl.querySelectorAll('.task-actions button, .wide-toggle button');
@@ -149,7 +146,6 @@
         }
     });
 
-    // Timeboxed checkpoint toggles (Stores repeating-time cards and Dispatch hourly grid)
     root.querySelectorAll('[data-item][data-timeboxed="1"]').forEach(function (itemEl) {
         var itemId = parseInt(itemEl.dataset.itemId, 10);
         var checkpointCells = itemEl.querySelectorAll('[data-checkpoint-id]');
@@ -216,7 +212,6 @@
 
     updateProgress();
 
-    // Auditor names / location autosave
     ['auditorNames', 'location'].forEach(function (id) {
         var el = document.getElementById(id);
         if (!el || readOnly) return;
@@ -229,7 +224,7 @@
                     auditorNames: document.getElementById('auditorNames').value,
                     location: document.getElementById('location').value,
                     actor: actorName()
-                }).catch(function () { /* best-effort */ });
+                }).catch(function () {});
             }, 600);
         });
     });

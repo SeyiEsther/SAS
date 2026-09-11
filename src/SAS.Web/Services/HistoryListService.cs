@@ -29,7 +29,6 @@ public class HistoryFilter
     public DateOnly? DateTo { get; set; }
 }
 
-/// <summary>Filterable listing of completed (and in-progress) checklists.</summary>
 public class HistoryListService
 {
     private readonly AppDbContext _db;

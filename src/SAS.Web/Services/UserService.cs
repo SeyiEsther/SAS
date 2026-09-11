@@ -5,13 +5,6 @@ using SAS.Web.Models;
 
 namespace SAS.Web.Services;
 
-/// <summary>
-/// Resolves the signed-in Windows user and their Active Directory display
-/// name — same approach as TL's UserService, including the one-hour cache so
-/// every request doesn't hit AD. Off Windows (or with no authenticated
-/// identity) it falls back to the process user so local development still
-/// works without a domain.
-/// </summary>
 public class UserService
 {
     private readonly IHttpContextAccessor _http;
@@ -77,9 +70,6 @@ public class UserService
         {
             using var ctx = new PrincipalContext(ContextType.Domain);
 
-            // Accounts here are numbers (e.g. "uk12345"), so try every identity
-            // type AD might hold that number under before giving up — a number
-            // on screen is no use to anyone.
             foreach (var idType in new[]
                      {
                          IdentityType.SamAccountName,
@@ -92,8 +82,6 @@ public class UserService
                 if (name is not null) return name;
             }
 
-            // Last resort: some directories file the number under employeeId
-            // rather than the account name.
             using var byEmployeeId = new PrincipalSearcher(new UserPrincipal(ctx) { EmployeeId = username });
             if (byEmployeeId.FindOne() is UserPrincipal found)
             {
@@ -121,12 +109,6 @@ public class UserService
     }
 }
 
-/// <summary>
-/// Matches a configured/stored name against the signed-in user's display name
-/// or account name. Copied from TL so both systems agree on who someone is:
-/// exact match, "First Last" equivalence, nickname pairs (Mike/Michael), and
-/// prefix matching for account names like "jsmith".
-/// </summary>
 public static class PortalNameMatcher
 {
     public static bool Matches(string? configured, string? actual)

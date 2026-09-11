@@ -2,9 +2,6 @@
 @{
     var pg = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
     var isAdminArea = pg == "/Admin" || pg.StartsWith("/Admin");
-    // Windows accounts here are numbers, so show the person's actual name.
-    // Both lookups hit the database; if that's unreachable the header must
-    // still render — otherwise even the error page fails to load.
     var userLabel = Access.CurrentAccountName;
     var isHod = false;
     try { userLabel = await Access.CurrentDisplayNameAsync(); isHod = await Access.IsHodAsync(); } catch { }

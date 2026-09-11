@@ -5,12 +5,6 @@ using SAS.Web.Services;
 
 namespace SAS.Web.Controllers;
 
-/// <summary>
-/// PDF export, exposed as its own controller (as TL does) rather than a
-/// Razor Page handler. A PDF is only ever generated from what's already
-/// committed in the database — never from in-memory form state — so it can
-/// only be offered once a save has genuinely succeeded.
-/// </summary>
 [ApiController]
 [Route("api/checklist/pdf")]
 public class PdfController : ControllerBase

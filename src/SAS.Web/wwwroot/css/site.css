@@ -69,7 +69,6 @@ a { color: inherit; text-decoration: none; }
 .page { max-width: 900px; margin: 0 auto; padding: 20px 16px 40px; }
 .page.wide { max-width: 1400px; }
 
-/* Welcome card — copied from TL's Index.cshtml / site.css */
 .welcome-wrap { min-height: calc(100vh - 52px); display: flex; align-items: center; justify-content: center; padding: 2rem; }
 .welcome-card {
     background: rgba(255,255,255,.92);
@@ -112,8 +111,6 @@ a { color: inherit; text-decoration: none; }
 .checklist-head h1 { font-size: 22px; font-weight: 700; }
 .checklist-head .meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
 
-/* Session bar — matches TL's Form.cshtml header exactly: a row of small
-   labeled read-only fields rather than a plain title. */
 .session-bar {
     background: var(--white); border: 1px solid var(--border); border-radius: 14px;
     padding: 14px 20px; display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px;
@@ -164,7 +161,6 @@ a { color: inherit; text-decoration: none; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
 
-/* Task cards (Stores-style, no category) */
 .task-card {
     background: var(--white); border: 1px solid var(--border); border-radius: 12px;
     padding: 16px; margin-bottom: 12px;
@@ -190,8 +186,6 @@ a { color: inherit; text-decoration: none; }
 .save-state.saved { color: var(--green); }
 .save-state.pending { color: #b45309; }
 
-/* Time-boxed checks inside a card: one small block per checkpoint, laid out
-   in a grid so 9am/11am/1pm/3pm read as four equal slots on any width. */
 .cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
 .cp-cell { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: var(--surface); }
 .cp-cell .cp-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; text-align: center; }
@@ -201,7 +195,6 @@ a { color: inherit; text-decoration: none; }
 .cp-btn.active-issue { background: var(--red-bg); border-color: var(--red); color: var(--red-text); }
 .cp-btn:disabled { opacity: .55; cursor: not-allowed; }
 
-/* Card header: number, question, and a tick once the card is fully answered */
 .task-head { display: flex; align-items: flex-start; gap: 10px; }
 .task-no {
     flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
@@ -217,7 +210,6 @@ a { color: inherit; text-decoration: none; }
     text-transform: uppercase; letter-spacing: .04em; vertical-align: middle;
 }
 
-/* Issues the audit says must be escalated */
 .escalation-card {
     background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid var(--orange);
     border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
@@ -228,7 +220,6 @@ a { color: inherit; text-decoration: none; }
 .escalation-text { font-size: 13px; color: var(--ink); }
 .escalation-meta { font-size: 11px; font-weight: 700; color: #9a3412; white-space: nowrap; }
 
-/* Hourly grid — markup and styling copied from TL's Form.cshtml / site.css */
 .grid-wrap {
     background: var(--white); border: 1px solid var(--border); border-radius: 14px;
     overflow: hidden; overflow-x: auto; margin-bottom: 14px;
@@ -280,7 +271,6 @@ a { color: inherit; text-decoration: none; }
 .wide-toggle button.done.active { background: var(--green-bg); border-color: var(--green); color: #166534; }
 .wide-toggle button.issue.active { background: var(--red-bg); border-color: var(--red); color: var(--red-text); }
 
-/* Bottom action bar */
 .action-bar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
     background: var(--white); border-top: 1px solid var(--border);
@@ -290,12 +280,10 @@ a { color: inherit; text-decoration: none; }
 .action-bar .btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
 .action-bar .btn.ghost { background: var(--white); color: var(--ink); }
 
-/* Buttons generally */
 .btn { display: inline-block; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); font-size: 13px; font-weight: 600; cursor: pointer; }
 .btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
 .btn.small { padding: 6px 12px; font-size: 12px; }
 
-/* Home picker */
 .picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
 .picker-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-md); }
 .picker-card h3 { font-size: 15px; margin-bottom: 10px; }
@@ -304,7 +292,6 @@ a { color: inherit; text-decoration: none; }
 .chip:hover { background: var(--accent-soft); border-color: var(--accent); }
 .chip.inactive { opacity: .45; pointer-events: none; }
 
-/* Tables (Completed / Admin) */
 table.data { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 table.data th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
 table.data td { padding: 10px 12px; border-bottom: 1px solid #f1f2f4; font-size: 13px; }

@@ -5,17 +5,6 @@ using SAS.Web.Models;
 
 namespace SAS.Web.Services;
 
-/// <summary>
-/// Who the signed-in user is allowed to be, and what that lets them do.
-/// Mirrors TL's PortalAccessService: admin comes from configuration
-/// (Admin:DisplayNames / Admin:Usernames / Admin:GrantAll), everyone else is
-/// matched against the People table by display name or account name.
-///
-/// The rules themselves come from the Dispatch Warehouse audit data, not from
-/// code: an item whose ResponsibleRole is "HOD" can only be answered by an
-/// HOD, and an item with an EscalateToRole must be escalated to that role
-/// within its EscalationWindow once it's answered as an Issue.
-/// </summary>
 public class AccessService
 {
     private const string PeopleCacheKey = "sas-people";
@@ -74,31 +63,21 @@ public class AccessService
         return false;
     }
 
-    /// <summary>The People row matching the signed-in user, if there is one.</summary>
     public async Task<Person?> ResolveCurrentPersonAsync()
     {
         var user = CurrentUser;
         var people = await GetPeopleAsync();
 
-        // Account name is matched exactly — these are numbers (uk12345), and
-        // fuzzy/prefix matching on a number would happily match the wrong person.
         var byAccount = people.FirstOrDefault(p =>
             !string.IsNullOrWhiteSpace(p.Username) &&
             string.Equals(p.Username!.Trim(), user.Username, StringComparison.OrdinalIgnoreCase));
         if (byAccount is not null) return byAccount;
 
-        // Otherwise fall back to matching the AD display name against the list.
         return people.FirstOrDefault(p =>
             PortalNameMatcher.Matches(p.DisplayName, user.DisplayName) ||
             PortalNameMatcher.Matches(p.DisplayName, user.Username));
     }
 
-    /// <summary>
-    /// The person's actual name for display and for stamping on records.
-    /// Windows accounts here are numbers, so: the name mapped to that account
-    /// number in People wins, then whatever AD gave us, and only as a last
-    /// resort the raw account number.
-    /// </summary>
     public async Task<string> CurrentDisplayNameAsync()
     {
         var user = CurrentUser;
@@ -111,7 +90,6 @@ public class AccessService
         }
         catch
         {
-            // Database unreachable — fall through to whatever we already know.
         }
 
         if (!string.IsNullOrWhiteSpace(user.DisplayName) &&
@@ -121,7 +99,6 @@ public class AccessService
         return user.Username;
     }
 
-    /// <summary>The raw Windows account name, so an admin can map it to a person.</summary>
     public string CurrentAccountName => CurrentUser.Username;
 
     public async Task<bool> IsHodAsync()
@@ -131,10 +108,6 @@ public class AccessService
         return person?.Role == PersonRole.Hod;
     }
 
-    /// <summary>
-    /// Can the current user answer this check? Items the audit assigns to the
-    /// HOD are HOD-only; everything else is open to whoever is on shift.
-    /// </summary>
     public async Task<bool> CanAnswerAsync(TaskItem item)
     {
         if (!string.Equals(item.ResponsibleRole, PersonRole.Hod, StringComparison.OrdinalIgnoreCase))
@@ -142,6 +115,5 @@ public class AccessService
         return await IsHodAsync();
     }
 
-    /// <summary>Only an HOD signs a checklist off.</summary>
     public Task<bool> CanSignOffAsync() => IsHodAsync();
 }

@@ -14,13 +14,6 @@ public class AdminResult
     public static AdminResult Fail(string error) => new() { Success = false, Error = error };
 }
 
-/// <summary>
-/// Full CRUD for every configuration table (Departments, Areas, Shifts,
-/// TaskLists, TaskItems, TaskCheckpoints) — this is the only place that
-/// writes to those tables outside of a migration. The governing rule this
-/// exists to serve: the whole of a department could be deleted and
-/// re-entered here with no code change and no redeployment.
-/// </summary>
 public class AdminService
 {
     private readonly AppDbContext _db;

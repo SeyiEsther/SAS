@@ -16,10 +16,6 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 
-// Persist Data Protection keys outside the app folder so an app-pool recycle
-// or a redeploy doesn't invalidate in-flight antiforgery tokens — otherwise a
-// checklist left open across a restart fails to save with a 400. Try a few
-// writable candidates and use the first one that actually works.
 static string? ResolveWritableKeyDir(params string?[] candidates)
 {
     foreach (var c in candidates)
@@ -33,7 +29,7 @@ static string? ResolveWritableKeyDir(params string?[] candidates)
             File.Delete(probe);
             return c;
         }
-        catch { /* try the next candidate */ }
+        catch { }
     }
     return null;
 }
@@ -50,10 +46,6 @@ if (keyDir is not null)
         .PersistKeysToFileSystem(new DirectoryInfo(keyDir));
 }
 
-// Windows authentication, as TL does it: under IIS the identity arrives from
-// IIS itself; Negotiate covers Kestrel/HTTP.sys. Nothing is *required* to be
-// authenticated — an unauthenticated request falls back to the process user so
-// local development works off-domain (see UserService).
 builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
 builder.Services.AddAuthorization();
 

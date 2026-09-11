@@ -10,11 +10,6 @@ public class CompleteResult
     public string? Error { get; init; }
 }
 
-/// <summary>
-/// Gates and performs sign-off: every item must be answered, and every Issue
-/// must carry notes, before a checklist can be marked complete. A save is
-/// only ever confirmed successful after this genuinely commits.
-/// </summary>
 public class ChecklistCompletionService
 {
     private readonly AppDbContext _db;

@@ -2,11 +2,6 @@ using SAS.Web.Models;
 
 namespace SAS.Web.Services;
 
-/// <summary>
-/// Shared read-only helpers for working out how much of a checklist has been
-/// answered. Used by the load, completion and history services alike so the
-/// definition of "answered" lives in exactly one place.
-/// </summary>
 public static class ChecklistProgress
 {
     public static bool IsItemAnswered(TaskItem item, ChecklistSubmission submission)

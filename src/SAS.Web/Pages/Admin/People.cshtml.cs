@@ -63,7 +63,6 @@ public class PeopleModel : PageModel
     {
         Message = result.Message;
         Error = result.Error;
-        // Access checks read a 60s cache; drop it so a change takes effect at once.
         _access.InvalidatePeopleCache();
     }
 }

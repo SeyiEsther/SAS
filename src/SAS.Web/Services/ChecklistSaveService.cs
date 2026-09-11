@@ -4,10 +4,6 @@ using SAS.Web.Models;
 
 namespace SAS.Web.Services;
 
-/// <summary>
-/// Every write the checklist entry screen makes while someone works down the
-/// list — one task at a time, saved immediately, never batched.
-/// </summary>
 public class ChecklistSaveService
 {
     private readonly AppDbContext _db;
